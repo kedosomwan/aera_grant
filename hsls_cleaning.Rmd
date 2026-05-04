@@ -126,7 +126,13 @@ N_FACTORS(df_p2_home, criteria = c("PARALLEL", "EKC", "SMT")) # 2 factors
 N_FACTORS(df_p1_school, criteria = c("PARALLEL", "EKC", "SMT")) # 1 or 2 factors
 ```
 
+## Exploratory Factor Analysis
+```{r}
 
+```
+
+
+# Modify Variables
 
 ## Variable Manipulation
 ```{r}
