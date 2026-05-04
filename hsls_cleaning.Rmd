@@ -52,7 +52,7 @@ S1M8, S1S8, X3T1CREDALG1, X3T1CREDALG2, X3T1CREDCALC, X3T1CREDCHEM, X3T1CREDPHYS
 # Postsecondary STEM major and coursework
 X4RFDGMJSTEM, X5STEMCRED, X5STEM1ATT, X5STEM1ERN, X5STEM1GPA, X5STEM3ATT, X5STEM3ERN, X5STEM3GPA,
 # Parent Expectations & Educational Engagement
-P1EDUASPIRE, P1EDUEXPECT, P1FUNDRAISE, P1HONORS, P1MTHHWEFF, P1PTCONFER, P1PTOMTG, P1SCHEVENT, P1SCHMTG, P1SCIFAIR, P1SCIHWEFF, P1SCIPROJ, P1STEMDISC, P1VOLUNTEER, P2EDUASP, P2EDUEXP, P2ABLEBA, P2DISCCOURSES, S1DADTALKM, S1DADTALKS, S1MOMTALKM, S1MOMTALKS,
+P1EDUASPIRE, P1EDUEXPECT, P1FUNDRAISE, P1HONORS, P1MTHHWEFF, P1PTCONFER, P1PTOMTG, P1SCHEVENT, P1SCHMTG, P1SCIFAIR, P1SCIHWEFF, P1SCIPROJ, P1STEMDISC, P1VOLUNTEER, P1ABLEBA, P2EDUASP, P2EDUEXP, P2ABLEBA, P2DISCCOURSES, P2MTHHWEFF, P2SCIHWEFF, P2SCIPROJ, P2STEMDISC, S1DADTALKM, S1DADTALKS, S1MOMTALKM, S1MOMTALKS,
 # Math Teacher Expectations and Beliefs [Scales in Red]
 X1TMCOMM, M1SHRIDEAS, M1WORKSHOP, M1SHRSTWRK, M1SHRLESSONS, M1SHRBELIEFS, M1SHRMTHDS, M1SHRELL, M1SHRAPPRCH, M1SHRCONTENT, M1EFFECTIVE, M1MENTOR, M1CHAIR, 
 X1MTHEFF, M1FAMILY, M1DISCIPLINE, M1STUACHIEVE, M1PARENT, M1RETAIN, M1REDIRECT, M1GETTHRU, M1HOMEFX, 
@@ -97,9 +97,11 @@ view_df(hsls, show.frq = TRUE, show.prc = TRUE)
 
 ## Subset Parent Questions for Base Year and followup
 ```{r}
-df_p1 <- hsls %>% dplyr::select(starts_with("p1"))
+df_p1_home <- hsls %>% dplyr::select(p1eduexpect, p1eduaspire, p1ableba, p1stemdisc)
 
-df_p2 <- hsls %>% dplyr::select(starts_with("p2"))
+df_p2_home <- hsls %>% dplyr::select(p2eduexp, p2eduasp, p2ableba, p2stemdisc, p2disccourses)
+
+df_p1_school <- hsls %>% dplyr::select(p1ptomtg, p1ptomtg, p1schevent, p1schmtg, p1volunteer, p1fundraise)
 ```
 
 ## load factor analysis and scale related libraries
@@ -108,6 +110,17 @@ library(psych)
 library(EFAtools)
 library(lavaan)
 ```
+
+## KMO
+```{r}
+KMO(df_p1_home)
+KMO(df_p2_home)
+KMO(df_p1_school)
+
+# new subsets based on KMO
+
+```
+
 
 ## Variable Manipulation
 ```{r}
