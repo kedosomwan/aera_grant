@@ -34,11 +34,6 @@ hsls_na <- hsls_raw
 #hsls_na <- hsls_na %>% select(stu_id, starts_with("x1"), starts_with("p1"), x3thimath9, starts_with("w1par"), starts_with("m1"), starts_with("n1"))
 
 # replace missing values
-hsls_na[hsls_na == -9] <- NA
-hsls_na[hsls_na == -8] <- NA
-hsls_na[hsls_na == -7] <- NA
-hsls_na[hsls_na == -6] <- NA
-hsls_na[hsls_na == -5] <- NA
 
 # filter out variables where more than 10% is missing
 ## hsls_na <- hsls_na %>% dplyr::select(where(~mean(is.na(.)) <= 0.10))
