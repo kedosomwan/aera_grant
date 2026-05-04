@@ -91,7 +91,15 @@ hsls[hsls == -1] <- NA # don't know
 # view subset
 view_df(hsls, show.frq = TRUE, show.prc = TRUE)
 
+```
 
+# Factor Analysis of Parent Data
+
+## Subset Parent Questions for Base Year and followup
+```{r}
+df_p1 <- hsls %>% dplyr::select(starts_with("p1"))
+
+df_p2 <- hsls %>% dplyr::select(starts_with("p2"))
 ```
 
 ```{r}
