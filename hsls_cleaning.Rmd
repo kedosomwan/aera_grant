@@ -102,8 +102,11 @@ df_p1 <- hsls %>% dplyr::select(starts_with("p1"))
 df_p2 <- hsls %>% dplyr::select(starts_with("p2"))
 ```
 
+## load factor analysis and scale related libraries
 ```{r}
-
+library(psych)
+library(EFAtools)
+library(lavaan)
 ```
 
 ## Variable Manipulation
