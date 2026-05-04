@@ -89,7 +89,7 @@ hsls[hsls == -3] <- NA # carry through missing
 hsls[hsls == -1] <- NA # don't know
 
 # view subset
-view_df(hsls, show.frq = TRUE, show.prc = TRUE)
+view_df(hsls, show.frq = TRUE, show.prc = TRUE, sort = TRUE)
 
 ```
 
@@ -97,11 +97,13 @@ view_df(hsls, show.frq = TRUE, show.prc = TRUE)
 
 ## Subset Parent Questions for Base Year and followup
 ```{r}
-df_p1_home <- hsls %>% dplyr::select(p1eduexpect, p1eduaspire, p1ableba, p1stemdisc)
+df_p1_home <- hsls %>% dplyr::select(p1eduexpect, p1eduaspire, p1ableba, p1stemdisc, s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)
 
 df_p2_home <- hsls %>% dplyr::select(p2eduexp, p2eduasp, p2ableba, p2stemdisc, p2disccourses)
 
 df_p1_school <- hsls %>% dplyr::select(p1ptomtg, p1ptomtg, p1schevent, p1schmtg, p1volunteer, p1fundraise)
+
+df_p <- hsls %>% dplyr::select(p1eduexpect, p1eduaspire, p1ableba, p1stemdisc, s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks, p2eduexp, p2eduasp, p2ableba, p2stemdisc, p2disccourses)
 ```
 
 ## load factor analysis and scale related libraries
@@ -116,10 +118,14 @@ library(lavaan)
 KMO(df_p1_home)
 KMO(df_p2_home)
 KMO(df_p1_school)
-
-# new subsets based on KMO
-
 ```
+## Test # of Factors
+```{r}
+N_FACTORS(df_p1_home) # 2 factors
+N_FACTORS(df_p2_home, criteria = c("PARALLEL", "EKC", "SMT")) # 2 factors
+N_FACTORS(df_p1_school, criteria = c("PARALLEL", "EKC", "SMT")) # 1 or 2 factors
+```
+
 
 
 ## Variable Manipulation
