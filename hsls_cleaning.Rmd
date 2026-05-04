@@ -127,8 +127,40 @@ N_FACTORS(df_p1_school, criteria = c("PARALLEL", "EKC", "SMT")) # 1 or 2 factors
 ```
 
 ## Exploratory Factor Analysis
+### Parent Home BY
 ```{r}
+fit_p1_home <- EFA(df_p1_home, 
+    n_factors = 2, # two factors
+    rotation = "promax", 
+    cor_method = "spearman", # b/c Likert
+    method = c("PAF", "ML", "ULS"))
+fit_p1_home
+# save factor loadings as csv file
+fit_p1_home_data <- cbind(fit_p1_home$rot_loadings, fit_p1_home$h2) %>% as.data.frame() 
+```
 
+### Parent Home FY
+```{r}
+fit_p2_home <- EFA(df_p2_home, 
+    n_factors = 2, # two factors
+    rotation = "promax", 
+    cor_method = "spearman", # b/c Likert
+    method = c("PAF", "ML", "ULS"))
+fit_p2_home
+# save factor loadings as csv file
+fit_p2_home_data <- cbind(fit_p2_home$rot_loadings, fit_p2_home$h2) %>% as.data.frame() 
+```
+
+### Parent School BY
+```{r}
+fit_p1_school <- EFA(df_p1_school, 
+    n_factors = 1, # one factors
+    rotation = "promax", 
+    cor_method = "spearman", # b/c Likert
+    method = c("PAF", "ML", "ULS"))
+fit_p1_school
+# save factor loadings as csv file
+fit_p1_school_data <- cbind(fit_p1_school$rot_loadings, fit_p1_school$h2) %>% as.data.frame() 
 ```
 
 
