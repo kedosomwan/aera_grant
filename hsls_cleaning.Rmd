@@ -32,7 +32,7 @@ hsls_raw <- read_dta("hsls_17_student_pets_sr_v1_0.dta")
 ```{r}
 hsls_subset <- hsls_raw %>% dplyr::select(
 # Student Demographics & Background
-STU_ID, X1SES, X1SESQ5, X1RACE, X1SEX, X1SES_U, X2SES, X2SES_U, X2RACE, X2SESQ5, X2SEX, X2SESQ5_U, X1PAREDU, X1POVERTY185, X2PAREDU, X2POVERTY185, X1FAMINCOME, X2FAMINCOME,
+STU_ID, X1SES, X1SESQ5, X1RACE, X1SEX, X1SES_U, X2SES, X2SES_U, X2RACE, X2SESQ5, X2SEX, X2SESQ5_U, X1PAREDU, X1POVERTY185, X2PAREDU, X2POVERTY185, X1POVERTY130, X1POVERTY, X1FAMINCOME, X2FAMINCOME, X1PAR1RACE, X1PAR2RACE, P1ELLEVER, X1DUALLANG,
 # Student Mathematics Scores and STEM GPA
 S1M8GRADE, S1S8GRADE, X1TXMQUINT, X1TXMTH, X1TXMTSCOR, X2TXMQUINT, X2TXMTH, X2TXMTSCOR, X3TGPAHIMTH, X3TGPAHISCI, X3TGPAMAT, X3TGPASTEM,
 # Student Mathematics Scales [in Red] and Component Items
@@ -52,7 +52,7 @@ S1M8, S1S8, X3T1CREDALG1, X3T1CREDALG2, X3T1CREDCALC, X3T1CREDCHEM, X3T1CREDPHYS
 # Postsecondary STEM major and coursework
 X4RFDGMJSTEM, X5STEMCRED, X5STEM1ATT, X5STEM1ERN, X5STEM1GPA, X5STEM3ATT, X5STEM3ERN, X5STEM3GPA,
 # Parent Expectations & Educational Engagement
-P1EDUASPIRE, P1EDUEXPECT, P1FUNDRAISE, P1HONORS, P1MTHHWEFF, P1PTCONFER, P1PTOMTG, P1SCHEVENT, P1SCHMTG, P1SCIFAIR, P1SCIHWEFF, P1SCIPROJ, P1STEMDISC, P1VOLUNTEER, P1ABLEBA, P2EDUASP, P2EDUEXP, P2ABLEBA, P2DISCCOURSES, P2MTHHWEFF, P2SCIHWEFF, P2SCIPROJ, P2STEMDISC, S1DADTALKM, S1DADTALKS, S1MOMTALKM, S1MOMTALKS,
+P1EDUASPIRE, P1EDUEXPECT, P1FUNDRAISE, P1HONORS, P1MTHHWEFF, P1PTCONFER, P1PTOMTG, P1COUNSELOR, P1SCHEVENT, P1SCHMTG, P1SCIFAIR, P1SCIHWEFF, P1SCIPROJ, P1STEMDISC, P1VOLUNTEER, P1ABLEBA, P2EDUASP, P2EDUEXP, P2ABLEBA, P2DISCCOURSES, P2MTHHWEFF, P2SCIHWEFF, P2SCIPROJ, P2STEMDISC, S1DADTALKM, S1DADTALKS, S1MOMTALKM, S1MOMTALKS,
 # Math Teacher Expectations and Beliefs [Scales in Red]
 X1TMCOMM, M1SHRIDEAS, M1WORKSHOP, M1SHRSTWRK, M1SHRLESSONS, M1SHRBELIEFS, M1SHRMTHDS, M1SHRELL, M1SHRAPPRCH, M1SHRCONTENT, M1EFFECTIVE, M1MENTOR, M1CHAIR, 
 X1MTHEFF, M1FAMILY, M1DISCIPLINE, M1STUACHIEVE, M1PARENT, M1RETAIN, M1REDIRECT, M1GETTHRU, M1HOMEFX, 
@@ -76,11 +76,11 @@ names(hsls_subset) <- tolower(names(hsls_subset))
 ```{r}
 library(sjPlot)
 
-# drop nonresponses based on having unit non-response for highest math class in 8th grade, which we are using as our first time point
-hsls <- hsls_subset %>% dplyr::filter(s1m8 != -8)
+# drop nonresponses based on having unit non-response for highest math class in 8th grade, which we are using as our first time point, and highest math class in spring 2012, and higest math credit
+hsls <- hsls_subset %>% dplyr::filter(s1m8 != -8, x3thimath9 !=-8, s2himath12!=-8, x3thimath!=-8)
 
 # view data before replacing missing values
-view_df(hsls, show.frq = TRUE, show.prc = TRUE, sort = TRUE)
+## view_df(hsls, show.frq = TRUE, show.prc = TRUE, sort = TRUE)
 
 ```
 
@@ -88,7 +88,7 @@ view_df(hsls, show.frq = TRUE, show.prc = TRUE, sort = TRUE)
 ```{r}
 # replace missing values
 hsls[hsls == -9] <- NA # missing
-#hsls[hsls == -8] <- NA # non-response
+hsls[hsls == -8] <- NA # non-response
 hsls[hsls == -7] <- NA # legit skip
 hsls[hsls == -6] <- NA # not applicable
 hsls[hsls == -4] <- NA # not administered
@@ -102,87 +102,13 @@ hsls <- labelled::drop_unused_value_labels(hsls)
 view_df(hsls, show.frq = TRUE, show.prc = TRUE, show.na = TRUE,  sort = TRUE)
 
 ```
-
-# Factor Analysis of Parent Data
-
-## Subset Parent Questions for Base Year and followup
-```{r}
-df_p1_home <- hsls %>% dplyr::select(p1eduexpect, p1eduaspire, p1ableba, p1stemdisc, s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)
-
-df_p2_home <- hsls %>% dplyr::select(p2eduexp, p2eduasp, p2ableba, p2stemdisc, p2disccourses)
-
-df_p1_school <- hsls %>% dplyr::select(p1ptomtg, p1ptomtg, p1schevent, p1schmtg, p1volunteer, p1fundraise)
-
-df_p <- hsls %>% dplyr::select(p1eduexpect, p1eduaspire, p1ableba, p1stemdisc, s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks, p2eduexp, p2eduasp, p2ableba, p2stemdisc, p2disccourses)
-```
-
-## load factor analysis and scale related libraries
-```{r}
-library(psych)
-library(EFAtools)
-library(lavaan)
-```
-
-## KMO
-```{r}
-KMO(df_p1_home)
-KMO(df_p2_home)
-KMO(df_p1_school)
-```
-## Test # of Factors
-```{r}
-N_FACTORS(df_p1_home) # 2 factors
-N_FACTORS(df_p2_home, criteria = c("PARALLEL", "EKC", "SMT")) # 2 factors
-N_FACTORS(df_p1_school, criteria = c("PARALLEL", "EKC", "SMT")) # 1 or 2 factors
-```
-
-## Exploratory Factor Analysis
-### Parent Home BY
-```{r}
-fit_p1_home <- EFA(df_p1_home, 
-    n_factors = 2, # two factors
-    rotation = "promax", 
-    cor_method = "spearman", # b/c Likert
-    method = c("PAF", "ML", "ULS"))
-fit_p1_home
-# save factor loadings as csv file
-fit_p1_home_data <- cbind(fit_p1_home$rot_loadings, fit_p1_home$h2) %>% as.data.frame() 
-```
-
-### Parent Home FY
-```{r}
-fit_p2_home <- EFA(df_p2_home, 
-    n_factors = 2, # two factors
-    rotation = "promax", 
-    cor_method = "spearman", # b/c Likert
-    method = c("PAF", "ML", "ULS"))
-fit_p2_home
-# save factor loadings as csv file
-fit_p2_home_data <- cbind(fit_p2_home$rot_loadings, fit_p2_home$h2) %>% as.data.frame() 
-```
-
-### Parent School BY
-```{r}
-fit_p1_school <- EFA(df_p1_school, 
-    n_factors = 1, # one factors
-    rotation = "promax", 
-    cor_method = "spearman", # b/c Likert
-    method = c("PAF", "ML", "ULS"))
-fit_p1_school
-# save factor loadings as csv file
-fit_p1_school_data <- cbind(fit_p1_school$rot_loadings, fit_p1_school$h2) %>% as.data.frame() 
-```
-
-
-# Modify Variables
-
-## Variable Manipulation
+# Variable Manipulation
 ```{r}
 # ---------------------------
 # Outcome variable
 # ---------------------------
 # par_says_honors: binary numeric (0/1)
-hsls <- hsls_na %>%
+hsls <- hsls %>%
   mutate(
     par_says_honors = case_when(
       p1honors == 1 ~ "1 yes",
@@ -347,23 +273,89 @@ hsls <- hsls %>%
 
 # check poverty groups
 ##hsls %>% dplyr::select(pov_level, starts_with("x1pov")) %>% gtsummary::tbl_summary(by = pov_level)
+```
 
-# ---------------------------
-# Teacher Variables
-# ---------------------------
-deficit <- hsls %>% dplyr::select(m1family, m1discipline, m1stuachieve, m1parent)
-reliability(deficit)
+# Factor Analysis of Parent Data
 
+## Subset Parent Questions for Base Year and followup
+```{r}
+df_p1_home <- hsls %>% dplyr::select(p1eduexpect, p1eduaspire, p1ableba, p1stemdisc, s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)
+
+df_p2_home <- hsls %>% dplyr::select(p2eduexp, p2eduasp, p2ableba, p2stemdisc, p2disccourses)
+
+df_p1_school <- hsls %>% dplyr::select(p1ptomtg, p1ptomtg, p1schevent, p1schmtg, p1volunteer, p1fundraise)
+
+df_p <- hsls %>% dplyr::select(p1eduexpect, p1eduaspire, p1ableba, p1stemdisc, s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks, p2eduexp, p2eduasp, p2ableba, p2stemdisc, p2disccourses)
+```
+
+## load factor analysis and scale related libraries
+```{r}
+library(psych)
 library(EFAtools)
-math_focus <- hsls %>% dplyr::select(m1interest, m1concepts, m1algorithm, m1compskills, m1problem, m1reason, m1ideas, m1prepare, m1logic, m1history, m1explain, m1business, m1compute, m1test)
+library(lavaan)
+```
 
-math_rigor <- hsls %>% dplyr::select(m1problem, m1reason, m1ideas, m1logic, m1history, m1explain)
-reliability(math_rigor)
-KMO(math_rigor)
+## Test # of Factors and Suitability for Factor Analysis
+```{r}
+N_FACTORS(df_p1_home) # 2 factors
+N_FACTORS(df_p2_home, criteria = c("PARALLEL", "EKC", "SMT")) # 2 factors, need to be more specific in call since less than 6 variables
+N_FACTORS(df_p1_school, criteria = c("PARALLEL", "EKC", "SMT")) # 1 or 2 factors, need to be more specific in call since less than 6 variables
+```
 
-math_basic <- hsls %>% dplyr::select(m1algorithm, m1compskills, m1compute, m1test)
-reliability(math_basic)
-KMO(math_basic)
+## Exploratory Factor Analysis
+### Parent Home BY
+```{r}
+fit_p1_home <- EFA(df_p1_home, 
+    n_factors = 2, # two factors
+    rotation = "promax", 
+    cor_method = "spearman", # b/c Likert
+    method = c("PAF", "ML", "ULS"))
+fit_p1_home
+# save factor loadings as csv file
+fit_p1_home_data <- cbind(fit_p1_home$rot_loadings, fit_p1_home$h2) %>% as.data.frame() 
+```
+
+### Parent Home FY
+```{r}
+fit_p2_home <- EFA(df_p2_home, 
+    n_factors = 2, # two factors
+    rotation = "promax", 
+    cor_method = "spearman", # b/c Likert
+    method = c("PAF", "ML", "ULS"))
+fit_p2_home
+# save factor loadings as csv file
+fit_p2_home_data <- cbind(fit_p2_home$rot_loadings, fit_p2_home$h2) %>% as.data.frame() 
+```
+
+### Parent School BY
+```{r}
+fit_p1_school <- EFA(df_p1_school, 
+    n_factors = 1, # one factor
+    rotation = "promax", 
+    cor_method = "spearman", # b/c Likert
+    method = c("PAF", "ML", "ULS"))
+# save factor loadings as csv file
+fit_p1_school_data <- cbind(fit_p1_school$rot_loadings, fit_p1_school$h2) %>% as.data.frame() 
+fit_p1_school_data
+```
+
+## Teacher EFA
+```{r}
+mtch_deficit <- hsls %>% dplyr::select(m1family, m1discipline, m1stuachieve, m1parent)
+N_FACTORS(mtch_deficit, criteria = c("PARALLEL", "EKC", "SMT"))
+
+mtch_focus <- hsls %>% dplyr::select(m1interest, m1concepts, m1algorithm, m1compskills, m1problem, m1reason, m1ideas, m1prepare, m1logic, m1history, m1explain, m1business, m1compute, m1test)
+N_FACTORS(mtch_focus)
+
+mtch_efficacy <- hsls %>% dplyr::select(m1family, m1discipline, m1stuachieve, m1parent, m1retain, m1redirect, m1getthru, m1homefx)
+N_FACTORS(mtch_efficacy)
+
+mtch_rigor <- hsls %>% dplyr::select(m1problem, m1reason, m1ideas, m1logic, m1history, m1explain)
+N_FACTORS(mtch_rigor)
+
+mtch_basic <- hsls %>% dplyr::select(m1algorithm, m1compskills, m1compute, m1test)
+reliability(mtch_basic)
+N_FACTORS(mtch_basic, criteria = c("PARALLEL", "EKC", "SMT"))
 ```
 
 ```{r}
