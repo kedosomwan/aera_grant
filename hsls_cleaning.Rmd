@@ -245,7 +245,6 @@ hsls <- hsls %>%
 
     # par_sch_inv: count variable (numeric, Poisson-type)
     par_sch_inv = par_mtg +
-                  p1counselor +
                   p1schevent +
                   p1volunteer +
                   p1fundraise +
@@ -394,17 +393,21 @@ summary(efficacy_cfa)
 
 # Structural Equation Modelling
 ```{r}
-
-
 sem_model <- '
+# Factors
 deficit =~ m1family +  m1discipline + m1stuachieve + m1parent + m1homefx
-efficacy =~ m1stuachieve + m1retain + m1redirect + m1getthru
-rigor =~ m1problem + m1reason +  m1ideas
-basic =~ m1algorithm + m1compskills + m1compute + m1test
-x3tcredmat ~ deficit + rigor + basic + par_sch_inv + exp_ba + frpl + par_ba + female + math_score + adv_math
-rigor	~	x3tcredmat
-rigor	~	math_score
-rigor ~ adv_math
+par_home =~ p1eduexpect + p1eduaspire + able_ba1
+par_discuss =~ s1momtalkm + s1dadtalkm + s1momtalks + s1dadtalks 
+
+# Regressions
+deficit ~ par_sch_inv + par_home + adv_math + frpl
+x3tcredmat ~ par_sch_inv + par_home + par_discuss + frpl + par_ba + female + math_score + adv_math
+s1dadtalkm	~~	s1dadtalks
+s1momtalkm	~~	s1momtalks
+s1dadtalkm	~~	s1momtalks
+s1momtalkm	~~	s1dadtalks
+m1family	~~	m1homefx
+p1eduexpect	~~	p1eduaspire
 '
 fit <- sem(sem_model, data = hsls)
 summary(fit, fit.measures = TRUE)
