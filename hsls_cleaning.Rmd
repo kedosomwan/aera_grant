@@ -385,15 +385,10 @@ m1 <- 'deficit =~ m1family +  m1discipline + m1stuachieve + m1parent + m1homefx'
 deficit_cfa <- cfa(m1, data = hsls)
 summary(deficit_cfa)
 
-# Efficacy of Pedogogy
+# Efficacy of Pedagogy
 m2 <- 'efficacy =~ m1stuachieve + m1retain + m1redirect + m1getthru'
 efficacy_cfa <- cfa(m2, data = hsls)
 summary(efficacy_cfa)
-
-# Math Rigor
-m3 <- 'rigor =~ m1concepts + m1problem + m1reason + m1ideas + m1logic'
-rigor_efa <- cfa(m3, data = hsls)
-summary(rigor_efa)
 
 ```
 
