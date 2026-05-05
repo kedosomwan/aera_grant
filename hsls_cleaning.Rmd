@@ -257,9 +257,10 @@ hsls <- hsls %>%
 # ---------------------------
 hsls <- hsls %>%
   mutate(
-    exp_ba = ifelse(p1eduexpect >= 6, 1, 0),
+    able_ba1 = 5 - p1ableba,
+    exp_ba1 = ifelse(p1eduexpect >= 6, 1, 0),
     # par_exp: ordinal numeric (low → high expectations)
-    par_exp = ordered(
+    par_exp1 = ordered(
       case_when(
         p1eduexpect == 11            ~ 1,
         p1eduexpect %in% c(1,2,3,4)  ~ 2,
@@ -279,9 +280,9 @@ hsls <- hsls %>%
 
 ## Subset Parent Questions for Base Year and followup
 ```{r}
-df_p1_home <- hsls %>% dplyr::select(p1eduexpect, p1eduaspire, p1ableba, p1stemdisc, s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)
+df_p1_home <- hsls %>% dplyr::select(p1eduexpect, p1eduaspire, able_ba1, p1stemdisc, s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)
 
-df_p2_home <- hsls %>% dplyr::select(p2eduexp, p2eduasp, p2ableba, p2stemdisc, p2disccourses)
+df_p2_home <- hsls %>% dplyr::select(p2eduexp, p2eduasp, p2stemdisc, p2disccourses)
 
 df_p1_school <- hsls %>% dplyr::select(p1ptomtg, p1ptomtg, p1schevent, p1schmtg, p1volunteer, p1fundraise)
 
