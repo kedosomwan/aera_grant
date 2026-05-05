@@ -76,10 +76,7 @@ names(hsls) <- tolower(names(hsls))
 ```{r}
 library(sjPlot)
 
-# drop unused labels
-hsls <- labelled::drop_unused_value_labels(hsls)
-
-# replace m
+# replace missing values
 hsls[hsls == -9] <- NA # missing
 hsls[hsls == -8] <- NA # non-response
 hsls[hsls == -7] <- NA # legit skip
@@ -87,6 +84,9 @@ hsls[hsls == -6] <- NA # not applicable
 hsls[hsls == -4] <- NA # not administered
 hsls[hsls == -3] <- NA # carry through missing
 hsls[hsls == -1] <- NA # don't know
+
+# drop unused labels
+hsls <- labelled::drop_unused_value_labels(hsls)
 
 # view subset
 view_df(hsls, show.frq = TRUE, show.prc = TRUE, sort = TRUE)
