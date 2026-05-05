@@ -340,34 +340,64 @@ fit_p1_school_data
 ```
 
 ## Teacher EFA
+### Check Number of Factors
 ```{r}
-mtch_deficit <- hsls %>% dplyr::select(m1family, m1discipline, m1stuachieve, m1parent)
-N_FACTORS(mtch_deficit, criteria = c("PARALLEL", "EKC", "SMT"))
-
+# what teachers emphasize in class
 mtch_focus <- hsls %>% dplyr::select(m1interest, m1concepts, m1algorithm, m1compskills, m1problem, m1reason, m1ideas, m1prepare, m1logic, m1history, m1explain, m1business, m1compute, m1test)
 N_FACTORS(mtch_focus)
 
+# efficacy variables
 mtch_efficacy <- hsls %>% dplyr::select(m1family, m1discipline, m1stuachieve, m1parent, m1retain, m1redirect, m1getthru, m1homefx)
 N_FACTORS(mtch_efficacy)
 
-mtch_rigor <- hsls %>% dplyr::select(m1problem, m1reason, m1ideas, m1logic, m1history, m1explain)
-N_FACTORS(mtch_rigor)
-
-mtch_basic <- hsls %>% dplyr::select(m1algorithm, m1compskills, m1compute, m1test)
-reliability(mtch_basic)
-N_FACTORS(mtch_basic, criteria = c("PARALLEL", "EKC", "SMT"))
 ```
 
+### Run Teacher Focus EFA
+```{r}
+fit_mtch_focus <- EFA(mtch_focus, 
+    n_factors = 3, # two factors
+    rotation = "promax", 
+    cor_method = "spearman", # b/c Likert
+    method = c("PAF", "ML", "ULS"))
+fit_mtch_focus
+# save factor loadings as csv file
+fit_mtch_focus_data <- cbind(fit_mtch_focus$rot_loadings, fit_mtch_focus$h2) %>% as.data.frame() 
+```
+
+### Run Teacher Efficacy EFA
+```{r}
+fit_mtch_efficacy <- EFA(mtch_efficacy, 
+    n_factors = 2, # two factors
+    rotation = "promax", 
+    cor_method = "spearman", # b/c Likert
+    method = c("PAF", "ML", "ULS"))
+fit_mtch_efficacy
+# save factor loadings as csv file
+fit_mtch_efficacy_data <- cbind(fit_mtch_efficacy$rot_loadings, fit_mtch_efficacy$h2) %>% as.data.frame() 
+```
+# Confirmatory Factor Analysis
 ```{r}
 library(lavaan)
 
 ## deficit framing
-m1 <- 'deficit =~ m1family+  m1discipline + m1stuachieve + m1parent'
-deficit_cfa <- cfa(m1, data = hsls, )
+m1 <- 'deficit =~ m1family +  m1discipline + m1stuachieve + m1parent + m1homefx'
+deficit_cfa <- cfa(m1, data = hsls)
 summary(deficit_cfa)
 
+# Efficacy of Pedogogy
+m2 <- 'efficacy =~ m1stuachieve + m1retain + m1redirect + m1getthru'
+efficacy_cfa <- cfa(m2, data = hsls)
+summary(efficacy_cfa)
+
+```
+
+# Structural Equation Modelling
+```{r}
+
+
 sem_model <- '
-deficit =~ m1family +  m1discipline + m1stuachieve + m1parent
+deficit =~ m1family +  m1discipline + m1stuachieve + m1parent + m1homefx
+efficacy =~ m1stuachieve + m1retain + m1redirect + m1getthru
 rigor =~ m1problem + m1reason +  m1ideas
 basic =~ m1algorithm + m1compskills + m1compute + m1test
 x3tcredmat ~ deficit + rigor + basic + par_sch_inv + exp_ba + frpl + par_ba + female + math_score + adv_math
