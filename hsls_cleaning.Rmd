@@ -30,7 +30,7 @@ hsls_raw <- read_dta("hsls_17_student_pets_sr_v1_0.dta")
 
 # Subset Dataset Based on Grant Application and LowerCase
 ```{r}
-hsls <- hsls_raw %>% dplyr::select(
+hsls_subset <- hsls_raw %>% dplyr::select(
 # Student Demographics & Background
 STU_ID, X1SES, X1SESQ5, X1RACE, X1SEX, X1SES_U, X2SES, X2SES_U, X2RACE, X2SESQ5, X2SEX, X2SESQ5_U, X1PAREDU, X1POVERTY185, X2PAREDU, X2POVERTY185, X1FAMINCOME, X2FAMINCOME,
 # Student Mathematics Scores and STEM GPA
@@ -46,7 +46,7 @@ X2MTHINT_R, S2MENJOYING, S2MWASTE, S2MBORING, S2FAVSUBJ, S2MENJOYS,
 X2MTHUTI, S2MUSELIFE, S2MUSECLG, S2MUSEJOB,
 X2MEFFORT, S2MATTENTION, S2MONTIME, S2MSTOPTRYING, S2MGETBY,
 # Student Perceptions of Mathematics Teacher
-S1MTCHRESPCT, S1MTCHFAIR, S1MTCHCONF, S1MTCHMISTKE, S1MTCHTREAT, S1MTCHINTRST, S1MTCHMFDIFF, S1MTCHEASY, S2MTCHTREAT, S2MTCHINTRST, S2MTCHEASY, S2MTCHTHINK, S2MTCHGIVEUP, 
+S1MTCHRESPCT, S1MTCHFAIR, S1MTCHCONF, S1MTCHMISTKE, S1MTCHTREAT, S1MTCHINTRST, S1MTCHMFDIFF, S1MTCHEASY, S2MTCHTREAT, S2MTCHINTRST, S2MTCHEASY, S2MTCHTHINK, S2MTCHGIVEUP,
 # Mathematics and Science Secondary Coursework
 S1M8, S1S8, X3T1CREDALG1, X3T1CREDALG2, X3T1CREDCALC, X3T1CREDCHEM, X3T1CREDPHYS, X3T1CREDPREC, X3T1CREDSTAT, X3TCREDAPMTH, X3TCREDAPSCI, X3TCREDMAT, X3TCREDMTSC, X3TCREDSTEM, X3THIMATH, X3THIMATH9, X3THISCI, X3THISCI9, X3TWHENALG1, S2HIMATH12, S2HISCIENCE12,
 # Postsecondary STEM major and coursework
@@ -68,14 +68,25 @@ X1CONTROL, X2CONTROL, X3CONTROL, X4CONTROL, X1LOCALE, X2LOCALE, X3LOCALE, X4LOCA
 W1STUDENT, W1PARENT, W1MATHTCH, W2STUDENT, W2W1STU, W2PARENT, W2W1PAR, W3STUDENT, W3W1STU, W3W1W2STU, W3W2STU, W3HSTRANS, W3STUDENTTR, W3W1STUTR, W3W1W2STUTR, W3W2STUTR, W4STUDENT, W4W1STU, W4W1STUP1, W4W1STUP1P2, W4W1W2W3STU, W5PSTRANS, W5PSRECORDS, W5W1W2W3W4PSTRANS, W5W1W2W3W4PSRECORDS, W3W1MATHTCH
 )
 
-names(hsls) <- tolower(names(hsls))
+names(hsls_subset) <- tolower(names(hsls_subset))
 ```
 
-## View Data Summary
+## View Data Original Data Subset
 
 ```{r}
 library(sjPlot)
 
+# drop nonresponses based on having unit non-response for highest math class in 8th grade, which we are using as our first time point
+hsls <- hsls_subset %>% dplyr::filter(s1m8 != -8)
+
+
+# view data before replacing missing values
+view_df(hsls, show.frq = TRUE, show.prc = TRUE, sort = TRUE)
+
+```
+
+## View Data Subset with Missing Values
+```{r}
 # replace missing values
 hsls[hsls == -9] <- NA # missing
 hsls[hsls == -8] <- NA # non-response
@@ -88,8 +99,8 @@ hsls[hsls == -1] <- NA # don't know
 # drop unused labels
 hsls <- labelled::drop_unused_value_labels(hsls)
 
-# view subset
-view_df(hsls, show.frq = TRUE, show.prc = TRUE, sort = TRUE)
+# view data after replacing missing values
+view_df(hsls, show.frq = TRUE, show.prc = TRUE, show.na = TRUE,  sort = TRUE)
 
 ```
 
