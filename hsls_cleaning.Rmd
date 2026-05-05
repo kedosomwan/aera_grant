@@ -257,7 +257,7 @@ hsls <- hsls %>%
 # ---------------------------
 hsls <- hsls %>%
   mutate(
-    able_ba1 = 5 - p1ableba,
+    able_ba1 = 5 - p1ableba,# reverse code this so that higher numbers are higher ratings of student ability to complete BA
     exp_ba1 = ifelse(p1eduexpect >= 6, 1, 0),
     # par_exp: ordinal numeric (low → high expectations)
     par_exp1 = ordered(
