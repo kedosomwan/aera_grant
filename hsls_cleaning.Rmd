@@ -390,6 +390,11 @@ m2 <- 'efficacy =~ m1stuachieve + m1retain + m1redirect + m1getthru'
 efficacy_cfa <- cfa(m2, data = hsls)
 summary(efficacy_cfa)
 
+# Math Rigor
+m3 <- 'rigor =~ m1concepts + m1problem + m1reason + m1ideas + m1logic'
+rigor_efa <- cfa(m3, data = hsls)
+summary(rigor_efa)
+
 ```
 
 # Structural Equation Modelling
