@@ -284,7 +284,7 @@ df_p1_home <- hsls %>% dplyr::select(p1eduexpect, p1eduaspire, able_ba1, p1stemd
 
 df_p2_home <- hsls %>% dplyr::select(p2eduexp, p2eduasp, p2stemdisc, p2disccourses)
 
-df_p1_school <- hsls %>% dplyr::select(p1ptomtg, p1ptomtg, p1schevent, p1schmtg, p1volunteer, p1fundraise)
+df_p1_school <- hsls %>% dplyr::select(p1ptomtg, p1ptomtg, p1schevent, p1schmtg, p1volunteer, p1fundraise, p1counselor)
 
 df_p <- hsls %>% dplyr::select(p1eduexpect, p1eduaspire, p1ableba, p1stemdisc, s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks, p2eduexp, p2eduasp, p2ableba, p2stemdisc, p2disccourses)
 ```
@@ -300,7 +300,7 @@ library(lavaan)
 ```{r}
 N_FACTORS(df_p1_home) # 2 factors
 N_FACTORS(df_p2_home, criteria = c("PARALLEL", "EKC", "SMT")) # 2 factors, need to be more specific in call since less than 6 variables
-N_FACTORS(df_p1_school, criteria = c("PARALLEL", "EKC", "SMT")) # 1 or 2 factors, need to be more specific in call since less than 6 variables
+N_FACTORS(df_p1_school) # 1 or 2 factors
 ```
 
 ## Exploratory Factor Analysis
