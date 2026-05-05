@@ -79,7 +79,6 @@ library(sjPlot)
 # drop nonresponses based on having unit non-response for highest math class in 8th grade, which we are using as our first time point
 hsls <- hsls_subset %>% dplyr::filter(s1m8 != -8)
 
-
 # view data before replacing missing values
 view_df(hsls, show.frq = TRUE, show.prc = TRUE, sort = TRUE)
 
@@ -89,7 +88,7 @@ view_df(hsls, show.frq = TRUE, show.prc = TRUE, sort = TRUE)
 ```{r}
 # replace missing values
 hsls[hsls == -9] <- NA # missing
-hsls[hsls == -8] <- NA # non-response
+#hsls[hsls == -8] <- NA # non-response
 hsls[hsls == -7] <- NA # legit skip
 hsls[hsls == -6] <- NA # not applicable
 hsls[hsls == -4] <- NA # not administered
