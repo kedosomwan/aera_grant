@@ -395,18 +395,14 @@ summary(efficacy_cfa)
 ```{r}
 sem_model <- '
 # Factors
-deficit =~ m1family +  m1discipline + m1stuachieve + m1parent + m1homefx
-par_home =~ p1eduexpect + p1eduaspire + able_ba1
 par_discuss =~ s1momtalkm + s1dadtalkm + s1momtalks + s1dadtalks 
 
 # Regressions
-deficit ~ par_sch_inv + par_home + adv_math + frpl
-x3tcredmat ~ par_sch_inv + par_home + par_discuss + frpl + par_ba + female + math_score + adv_math
+x3tcredmat ~ par_sch_inv + par_discuss + frpl + par_ba + female + math_score + adv_math + x1mtheff
 s1dadtalkm	~~	s1dadtalks
 s1momtalkm	~~	s1momtalks
 s1dadtalkm	~~	s1momtalks
 s1momtalkm	~~	s1dadtalks
-m1family	~~	m1homefx
 p1eduexpect	~~	p1eduaspire
 '
 fit <- sem(sem_model, data = hsls)
