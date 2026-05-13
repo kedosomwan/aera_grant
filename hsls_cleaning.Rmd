@@ -279,7 +279,7 @@ hsls <- hsls %>%
 
 ## Subset Parent Questions for Base Year and followup
 ```{r}
-df_p1_home <- hsls %>% dplyr::select(p1eduexpect, p1eduaspire, able_ba1, p1stemdisc, s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)
+df_p1_home <- hsls %>% dplyr::select(p1eduexpect, p1eduaspire, p1stemdisc, s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)
 
 df_p2_home <- hsls %>% dplyr::select(p2eduexp, p2eduasp, p2stemdisc, p2disccourses)
 
@@ -398,7 +398,7 @@ sem_model <- '
 par_discuss =~ s1momtalkm + s1dadtalkm + s1momtalks + s1dadtalks 
 
 # Regressions
-x3tcredmat ~ par_sch_inv + par_discuss + frpl + par_ba + female + math_score + adv_math + x1mtheff
+x3tcredmat ~ par_sch_inv + p1eduexpect + par_discuss + frpl + par_ba + female + math_score 
 s1dadtalkm	~~	s1dadtalks
 s1momtalkm	~~	s1momtalks
 s1dadtalkm	~~	s1momtalks
