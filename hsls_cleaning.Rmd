@@ -279,7 +279,7 @@ hsls <- hsls %>%
 
 ## Subset Parent Questions for Base Year and followup
 ```{r}
-df_p1_home <- hsls %>% dplyr::select(p1eduexpect, p1eduaspire, p1stemdisc, s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)
+df_p1_home <- hsls %>% dplyr::select(p1eduexpect, p1eduaspire, p1ableba, p1stemdisc, s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)
 
 df_p2_home <- hsls %>% dplyr::select(p2eduexp, p2eduasp, p2stemdisc, p2disccourses)
 
