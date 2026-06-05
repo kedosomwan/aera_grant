@@ -19,33 +19,24 @@ library(psych)
 library(EFAtools)
 library(lavaan)
 hsls <- haven::read_dta("hsls_subset.dta")
+df <- hsls %>% haven::as_factor()
 ```
 
-## Subset Parent Questions for Base Year
+## Subset Parent Questions for pa Year
 ```{r}
-home_involvement <- hsls %>% dplyr::select(p1eduexpect, p1eduaspire, able_ba1, s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)
-
-phbae <- hsls %>% select(p1eduexpect, p1eduaspire, able_ba1)
-
-psd <- hsls %>% select(s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)
+home_involvement <- df %>% dplyr::select(s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)
 
 ```
 
 # Factor Analysis
 
-## Test # of Factors and Suitability for Factor Analysis
-```{r}
-N_FACTORS(home_involvement) # 2 factors
-```
-
-## Factor Analysis
 ```{r}
 fit_p1_home <- EFA(home_involvement, 
-    n_factors = 2, # two factors
+    n_factors = 1, # two factors
     rotation = "promax", 
     cor_method = "spearman", # b/c Likert
     method = c("PAF", "ML", "ULS"))
-fit_p1_home
+
 
 # save factor loadings as csv file
 fit_p1_home_data <- cbind(fit_p1_home$rot_loadings, fit_p1_home$h2) %>% as.data.frame()
@@ -53,14 +44,58 @@ fit_p1_home_data <- cbind(fit_p1_home$rot_loadings, fit_p1_home$h2) %>% as.data.
 
 ## Reliability
 ```{r}
-hsls %>% select(., s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks) %>% psych::alpha()
-hsls %>% select(.,  p1eduexpect, p1eduaspire, able_ba1) %>% psych::alpha()
+psych::alpha(phbae)
+psych::alpha(psd)
+
+omega(home_involvement, nfactors = 2)
+
 ```
 
-## Reliability
+#  Poisson Regression
 ```{r}
 
+poi <- glm(data = df,
+  2*x3tcredmat ~ # do this by semester since there are half credits
+    phbae_scale + par_exp1 + par_sch_inv + # parent factors
+    as.factor(x1race) + frpl + par_ba + female + # ses/demographics
+    s1m8 + x1txmtscor + # prior achievement
+    x1mtheff + x1mthuti + x1mthint + x1mthid + # affective
+    as.factor(x1locale) + x1control, # school level
+  family = poisson)
 
+summ(poi, exp = TRUE)
 
 ```
+#  Linear Regression
+```{r}
+
+lm <- lm(data = df,
+ scale(x3tcredmat) ~ # do this by semester since there are half credits
+    phbae_scale + par_exp1 + par_sch_inv + # parent factors
+    as.factor(x1race) + frpl + par_ba + female + # ses/demographics
+    s1m8 + x1txmtscor + # prior achievement
+    x1mtheff + x1mthuti + x1mthint + x1mthid + # affective
+    as.factor(x1locale) + x1control) # school level
+
+
+summ(lm)
+
+```
+
+# Logistic Regressin
+```{r}
+glm <- glm(data = df,
+ adv_math ~ # do this by semester since there are half credits
+    phbae_scale + par_exp1 + par_sch_inv + # parent factors
+    as.factor(x1race) + frpl + par_ba + female + # ses/demographics
+    s1m8 + x1txmtscor + # prior achievement
+    x1mtheff + x1mthuti + x1mthint + x1mthid + # affective
+    as.factor(x1locale) + x1control, # school level
+ family = binomial)
+
+
+summ(glm, exp = TRUE)
+
+```
+
 
