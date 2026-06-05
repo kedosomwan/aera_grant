@@ -18,43 +18,33 @@ library(jtools)
 library(psych)
 library(EFAtools)
 library(lavaan)
-hsls <- haven::read_dta("hsls_subset.dta")
-df <- hsls %>% haven::as_factor()
+hsls <- haven::read_dta("hsls_subset.dta") # can use numeric values
+df <- hsls %>% haven::as_factor() #make it factors
 ```
+# Reliability and Validity
 
 ## Subset Parent Questions for pa Year
 ```{r}
 psd <- hsls %>% dplyr::select(s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)
+phbae <- hsls %>% dplyr::select(par_exp1, par_asp1, able_ba1)
+home <- hsls %>% dplyr::select(par_exp1, par_asp1, able_ba1, s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)
 
 ```
 
 ## Reliability
 ```{r}
 psych::alpha(psd)
+psych::alpha(phbae)
+psych::alpha(home)
 
 ```
 
-#  Poisson Regression
-```{r}
-
-poi <- glm(data = df,
-  2*x3tcredmat ~ # do this by semester since there are half credits
-    psd_scale + par_exp1 + par_sch_inv + # parent factors
-    as.factor(x1race) + frpl + par_ba + female + # ses/demographics
-    s1m8 + x1txmtscor + # prior achievement
-    x1mtheff + x1mthuti + x1mthint + x1mthid + # affective
-    as.factor(x1locale) + x1control, # school level
-  family = poisson)
-
-summ(poi, exp = TRUE)
-
-```
 #  Linear Regression
 ```{r}
 
-lm <- lm(data = df,
+lm <- lm(data = hsls,
  scale(x3tcredmat) ~ # do this by semester since there are half credits
-    psd_scale + par_exp1 + par_sch_inv + # parent factors
+    psd_scale + phbae_scale + par_sch_inv + # parent factors
     as.factor(x1race) + frpl + par_ba + female + # ses/demographics
     s1m8 + x1txmtscor + # prior achievement
     x1mtheff + x1mthuti + x1mthint + x1mthid + # affective
@@ -69,7 +59,7 @@ summ(lm)
 ```{r}
 glm <- glm(data = df,
  adv_math ~ # do this by semester since there are half credits
-    psd_scale + par_exp1 + par_sch_inv + # parent factors
+    psd_scale + phbae_scale + par_sch_inv + # parent factors
     as.factor(x1race) + frpl + par_ba + female + # ses/demographics
     s1m8 + x1txmtscor + # prior achievement
     x1mtheff + x1mthuti + x1mthint + x1mthid + # affective
