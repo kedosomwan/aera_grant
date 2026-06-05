@@ -1,0 +1,66 @@
+---
+title: "parent_analysis_special_issue"
+output: word_document
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Setup
+
+## Load libraries and dataset
+```{r}
+library(tidyverse)
+library(gtsummary)
+library(jtools)
+library(psych)
+library(EFAtools)
+library(lavaan)
+hsls <- haven::read_dta("hsls_subset.dta")
+```
+
+## Subset Parent Questions for Base Year
+```{r}
+home_involvement <- hsls %>% dplyr::select(p1eduexpect, p1eduaspire, able_ba1, s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)
+
+phbae <- hsls %>% select(p1eduexpect, p1eduaspire, able_ba1)
+
+psd <- hsls %>% select(s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)
+
+```
+
+# Factor Analysis
+
+## Test # of Factors and Suitability for Factor Analysis
+```{r}
+N_FACTORS(home_involvement) # 2 factors
+```
+
+## Factor Analysis
+```{r}
+fit_p1_home <- EFA(home_involvement, 
+    n_factors = 2, # two factors
+    rotation = "promax", 
+    cor_method = "spearman", # b/c Likert
+    method = c("PAF", "ML", "ULS"))
+fit_p1_home
+
+# save factor loadings as csv file
+fit_p1_home_data <- cbind(fit_p1_home$rot_loadings, fit_p1_home$h2) %>% as.data.frame()
+```
+
+## Reliability
+```{r}
+hsls %>% select(., s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks) %>% psych::alpha()
+hsls %>% select(.,  p1eduexpect, p1eduaspire, able_ba1) %>% psych::alpha()
+```
+
+## Reliability
+```{r}
+
+
+
+```
+
