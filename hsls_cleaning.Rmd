@@ -258,156 +258,32 @@ hsls <- hsls %>%
   mutate(
     able_ba1 = 5 - p1ableba,# reverse code this so that higher numbers are higher ratings of student ability to complete BA
     exp_ba1 = ifelse(p1eduexpect >= 6, 1, 0),
-    # par_exp: ordinal numeric (low → high expectations)
-    par_exp1 = ordered(
-      case_when(
-        p1eduexpect == 11            ~ 1,
-        p1eduexpect %in% c(1,2,3,4)  ~ 2,
-        p1eduexpect %in% c(5,6)      ~ 3,
-        p1eduexpect %in% c(7,8)      ~ 4,
-        p1eduexpect %in% c(9,10)     ~ 5
-      ),
-      levels = c(1, 2, 3, 4, 5)
-    )
+    # par_exp: ordinal numeric (low → high expectations), based on the parent aspirations sections wtih IDK grouped with lowest level
+    par_exp1 = case_when(
+        p1eduexpect %in% c(1,2, 11)    ~ 1, # IDK, high school/ged
+        p1eduexpect %in% c(3,4)      ~ 2, # associate
+        p1eduexpect %in% c(5,6)      ~ 3, # BA
+        p1eduexpect %in% c(7,8)      ~ 4, # MA
+        p1eduexpect %in% c(9,10)     ~ 5), # PhD/Professional
+    par_asp1 = case_when(
+        p1eduaspire  == 2      ~ 1,
+        p1eduaspire  == 4      ~ 2,
+        p1eduaspire  == 6      ~ 3,
+        p1eduaspire  == 8      ~ 4,
+        p1eduaspire  == 10     ~ 5))
+
+# ---------------------------
+# Create Scales
+# ---------------------------
+hsls <- hsls %>%
+  mutate(
+    # na.rm = TRUE means it will calculate based on available values
+    psd = rowMeans(select(., s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks), na.rm = TRUE),
+    psd_scale = scale(psd),
+    phbae = rowMeans(select(., p1eduexpect, p1eduaspire, able_ba1), na.rm = TRUE),
+    phbae_scale = scale(phbae)
   )
 
-# check poverty groups
-##hsls %>% dplyr::select(pov_level, starts_with("x1pov")) %>% gtsummary::tbl_summary(by = pov_level)
-```
-
-# Factor Analysis of Parent Data
-
-## Subset Parent Questions for Base Year and followup
-```{r}
-df_p1_home <- hsls %>% dplyr::select(p1eduexpect, p1eduaspire, p1ableba, p1stemdisc, s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)
-
-df_p2_home <- hsls %>% dplyr::select(p2eduexp, p2eduasp, p2stemdisc, p2disccourses)
-
-df_p1_school <- hsls %>% dplyr::select(p1ptomtg, p1ptomtg, p1schevent, p1schmtg, p1volunteer, p1fundraise, p1counselor)
-
-df_p <- hsls %>% dplyr::select(p1eduexpect, p1eduaspire, p1ableba, p1stemdisc, s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks, p2eduexp, p2eduasp, p2ableba, p2stemdisc, p2disccourses)
-```
-
-## load factor analysis and scale related libraries
-```{r}
-library(psych)
-library(EFAtools)
-library(lavaan)
-```
-
-## Test # of Factors and Suitability for Factor Analysis
-```{r}
-N_FACTORS(df_p1_home) # 2 factors
-N_FACTORS(df_p2_home, criteria = c("PARALLEL", "EKC", "SMT")) # 2 factors, need to be more specific in call since less than 6 variables
-N_FACTORS(df_p1_school) # 1 or 2 factors
-```
-
-## Exploratory Factor Analysis
-### Parent Home BY
-```{r}
-fit_p1_home <- EFA(df_p1_home, 
-    n_factors = 2, # two factors
-    rotation = "promax", 
-    cor_method = "spearman", # b/c Likert
-    method = c("PAF", "ML", "ULS"))
-fit_p1_home
-# save factor loadings as csv file
-fit_p1_home_data <- cbind(fit_p1_home$rot_loadings, fit_p1_home$h2) %>% as.data.frame() 
-```
-
-### Parent Home FY
-```{r}
-fit_p2_home <- EFA(df_p2_home, 
-    n_factors = 2, # two factors
-    rotation = "promax", 
-    cor_method = "spearman", # b/c Likert
-    method = c("PAF", "ML", "ULS"))
-fit_p2_home
-# save factor loadings as csv file
-fit_p2_home_data <- cbind(fit_p2_home$rot_loadings, fit_p2_home$h2) %>% as.data.frame() 
-```
-
-### Parent School BY
-```{r}
-fit_p1_school <- EFA(df_p1_school, 
-    n_factors = 1, # one factor
-    rotation = "promax", 
-    cor_method = "spearman", # b/c Likert
-    method = c("PAF", "ML", "ULS"))
-# save factor loadings as csv file
-fit_p1_school_data <- cbind(fit_p1_school$rot_loadings, fit_p1_school$h2) %>% as.data.frame() 
-fit_p1_school_data
-```
-
-## Teacher EFA
-### Check Number of Factors
-```{r}
-# what teachers emphasize in class
-mtch_focus <- hsls %>% dplyr::select(m1interest, m1concepts, m1algorithm, m1compskills, m1problem, m1reason, m1ideas, m1prepare, m1logic, m1history, m1explain, m1business, m1compute, m1test)
-N_FACTORS(mtch_focus)
-
-# efficacy variables
-mtch_efficacy <- hsls %>% dplyr::select(m1family, m1discipline, m1stuachieve, m1parent, m1retain, m1redirect, m1getthru, m1homefx)
-N_FACTORS(mtch_efficacy)
-
-```
-
-### Run Teacher Focus EFA
-```{r}
-fit_mtch_focus <- EFA(mtch_focus, 
-    n_factors = 3, # two factors
-    rotation = "promax", 
-    cor_method = "spearman", # b/c Likert
-    method = c("PAF", "ML", "ULS"))
-fit_mtch_focus
-# save factor loadings as csv file
-fit_mtch_focus_data <- cbind(fit_mtch_focus$rot_loadings, fit_mtch_focus$h2) %>% as.data.frame() 
-```
-
-### Run Teacher Efficacy EFA
-```{r}
-fit_mtch_efficacy <- EFA(mtch_efficacy, 
-    n_factors = 2, # two factors
-    rotation = "promax", 
-    cor_method = "spearman", # b/c Likert
-    method = c("PAF", "ML", "ULS"))
-fit_mtch_efficacy
-# save factor loadings as csv file
-fit_mtch_efficacy_data <- cbind(fit_mtch_efficacy$rot_loadings, fit_mtch_efficacy$h2) %>% as.data.frame() 
-```
-# Confirmatory Factor Analysis
-```{r}
-library(lavaan)
-
-## deficit framing
-m1 <- 'deficit =~ m1family +  m1discipline + m1stuachieve + m1parent + m1homefx'
-deficit_cfa <- cfa(m1, data = hsls)
-summary(deficit_cfa)
-
-# Efficacy of Pedagogy
-m2 <- 'efficacy =~ m1stuachieve + m1retain + m1redirect + m1getthru'
-efficacy_cfa <- cfa(m2, data = hsls)
-summary(efficacy_cfa)
-
-```
-
-# Structural Equation Modelling
-```{r}
-sem_model <- '
-# Factors
-par_discuss =~ s1momtalkm + s1dadtalkm + s1momtalks + s1dadtalks 
-
-# Regressions
-x3tcredmat ~ par_sch_inv + p1eduexpect + par_discuss + frpl + par_ba + female + math_score 
-s1dadtalkm	~~	s1dadtalks
-s1momtalkm	~~	s1momtalks
-s1dadtalkm	~~	s1momtalks
-s1momtalkm	~~	s1dadtalks
-p1eduexpect	~~	p1eduaspire
-'
-fit <- sem(sem_model, data = hsls)
-summary(fit, fit.measures = TRUE)
-modindices(fit, sort = TRUE)
 ```
 
 # Save Clean Dataset
