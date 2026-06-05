@@ -124,9 +124,9 @@ hsls <- hsls %>%
   mutate(
     # adv_math: binary numeric (0 = not advanced, 1 = advanced)
     adv_math = case_when(
-      x3thimath9 <= 4 ~ "1 yes",
-      x3thimath9 >= 5 ~ "0 no"
-    ),
+      x3thimath9 <= 4 ~ 0,
+      x3thimath9 >= 5 ~ 1,
+      TRUE ~ NA_real_),
 
     # math_3level: ordinal categorical (low → high)
     math_3level = ordered(
