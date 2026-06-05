@@ -24,30 +24,13 @@ df <- hsls %>% haven::as_factor()
 
 ## Subset Parent Questions for pa Year
 ```{r}
-home_involvement <- df %>% dplyr::select(s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)
+psd <- hsls %>% dplyr::select(s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)
 
-```
-
-# Factor Analysis
-
-```{r}
-fit_p1_home <- EFA(home_involvement, 
-    n_factors = 1, # two factors
-    rotation = "promax", 
-    cor_method = "spearman", # b/c Likert
-    method = c("PAF", "ML", "ULS"))
-
-
-# save factor loadings as csv file
-fit_p1_home_data <- cbind(fit_p1_home$rot_loadings, fit_p1_home$h2) %>% as.data.frame()
 ```
 
 ## Reliability
 ```{r}
-psych::alpha(phbae)
 psych::alpha(psd)
-
-omega(home_involvement, nfactors = 2)
 
 ```
 
@@ -56,7 +39,7 @@ omega(home_involvement, nfactors = 2)
 
 poi <- glm(data = df,
   2*x3tcredmat ~ # do this by semester since there are half credits
-    phbae_scale + par_exp1 + par_sch_inv + # parent factors
+    psd_scale + par_exp1 + par_sch_inv + # parent factors
     as.factor(x1race) + frpl + par_ba + female + # ses/demographics
     s1m8 + x1txmtscor + # prior achievement
     x1mtheff + x1mthuti + x1mthint + x1mthid + # affective
@@ -71,7 +54,7 @@ summ(poi, exp = TRUE)
 
 lm <- lm(data = df,
  scale(x3tcredmat) ~ # do this by semester since there are half credits
-    phbae_scale + par_exp1 + par_sch_inv + # parent factors
+    psd_scale + par_exp1 + par_sch_inv + # parent factors
     as.factor(x1race) + frpl + par_ba + female + # ses/demographics
     s1m8 + x1txmtscor + # prior achievement
     x1mtheff + x1mthuti + x1mthint + x1mthid + # affective
@@ -86,7 +69,7 @@ summ(lm)
 ```{r}
 glm <- glm(data = df,
  adv_math ~ # do this by semester since there are half credits
-    phbae_scale + par_exp1 + par_sch_inv + # parent factors
+    psd_scale + par_exp1 + par_sch_inv + # parent factors
     as.factor(x1race) + frpl + par_ba + female + # ses/demographics
     s1m8 + x1txmtscor + # prior achievement
     x1mtheff + x1mthuti + x1mthint + x1mthid + # affective
