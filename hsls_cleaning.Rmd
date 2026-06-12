@@ -12,7 +12,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
 
-# Data Engineering
+# Setup
 ## Load Libraries
 
 ```{r libraries}
@@ -23,12 +23,12 @@ library(psych)
 library(broom)
 ```
 
-# Load Dataset
+## Load Dataset
 ```{r}
 hsls_raw <- read_dta("hsls_17_student_pets_sr_v1_0.dta")
 ```
 
-# Subset Dataset Based on Grant Application and LowerCase
+## Subset Dataset Based on Grant Application and LowerCase
 ```{r}
 hsls_subset <- hsls_raw %>% dplyr::select(
 # Student Demographics & Background
@@ -71,86 +71,93 @@ W1STUDENT, W1PARENT, W1MATHTCH, W2STUDENT, W2W1STU, W2PARENT, W2W1PAR, W3STUDENT
 names(hsls_subset) <- tolower(names(hsls_subset))
 ```
 
-## View Data Original Data Subset
-
-```{r}
-library(sjPlot)
-
-# drop nonresponses based on having unit non-response for highest math class in 8th grade, which we are using as our first time point, and highest math class in spring 2012, and higest math credit
-hsls <- hsls_subset %>% dplyr::filter(s1m8 != -8, x3thimath9 !=-8, s2himath12!=-8, x3thimath!=-8)
-
-# view data before replacing missing values
-## view_df(hsls, show.frq = TRUE, show.prc = TRUE, sort = TRUE)
-
-```
-
 ## View Data Subset with Missing Values
 ```{r}
 # replace missing values
-hsls[hsls == -9] <- NA # missing
-hsls[hsls == -8] <- NA # non-response
-hsls[hsls == -7] <- NA # legit skip
-hsls[hsls == -6] <- NA # not applicable
-hsls[hsls == -4] <- NA # not administered
-hsls[hsls == -3] <- NA # carry through missing
-hsls[hsls == -1] <- NA # don't know
+hsls_subset[hsls_subset == -9] <- NA # missing
+hsls_subset[hsls_subset == -8] <- NA # non-response
+hsls_subset[hsls_subset == -7] <- NA # legit skip
+hsls_subset[hsls_subset == -6] <- NA # not applicable
+hsls_subset[hsls_subset == -4] <- NA # not administered
+hsls_subset[hsls_subset == -3] <- NA # carry through missing
+hsls_subset[hsls_subset == -1] <- NA # don't know
 
 # drop unused labels
-hsls <- labelled::drop_unused_value_labels(hsls)
+hsls_subset <- labelled::drop_unused_value_labels(hsls_subset)
 
 # view data after replacing missing values
-view_df(hsls, show.frq = TRUE, show.prc = TRUE, show.na = TRUE,  sort = TRUE)
+view_df(hsls_subset, show.frq = TRUE, show.prc = TRUE, show.na = TRUE,  sort = TRUE)
 
 ```
-# Variable Manipulation
-```{r}
-# ---------------------------
-# Outcome variable
-# ---------------------------
-# par_says_honors: binary numeric (0/1)
-hsls <- hsls %>%
-  mutate(
-    par_says_honors = case_when(
-      p1honors == 1 ~ "1 yes",
-      p1honors == 0 ~ "0 no",
-      TRUE ~ NA
-    )
-  )
 
+# Variable manipulation
+
+## Filter 
+```{r}
+# drop nonresponses based on having unit non-response for highest math class in 8th grade, which we are using as our first time point, and highest math class in spring 2012, and higest math credit. also those not taking math 9th grade
+hsls <- hsls_subset %>% dplyr::filter(!is.na(x3thimath9), x3thimath9 > 0, !is.na(x3thimath), !is.na(x3tcredmat))
+```
+
+## Math coursework
+```{r}
 # ---------------------------
 # Treatment variables
 # ---------------------------
-hsls <- hsls %>%
+hsls <- hsls_subset %>%
   mutate(
+    math_cred = x3tcredmat,
+    math_cred_semester = x3tcredmat*2,
     # adv_math: binary numeric (0 = not advanced, 1 = advanced)
-    adv_math = case_when(
-      x3thimath9 <= 4 ~ 0,
-      x3thimath9 >= 5 ~ 1,
-      TRUE ~ NA_real_),
-
-    # math_3level: ordinal categorical (low → high)
-    math_3level = ordered(
-      case_when(
-        x3thimath9 <= 3 ~ "1 remedial",
-        x3thimath9 == 4 ~ "2 on-level",
-        x3thimath9 >= 5 ~ "3 advanced"
-      ),
-      levels = c("1 remedial", "2 on-level", "3 advanced")
+    
+    adv_math1 = case_when(
+      x3thimath9 <= 4 ~ 0, # algebra 1 and below
+      x3thimath9 > 4  ~ 1, # algebra one or more advanced
+      TRUE ~ NA_real_
     ),
+    
+    adv_math2 = case_when(
+      s2himath12 <= 5 ~ 0, #geometry and below
+      #  analytic geo, trig, precalc, calc, stats, ib/ap
+      s2himath12 %in% c(6,7,8,9,10,11,12,16) ~ 1, 
+      s2himath12 %in% c(13,14,15,18,19) ~ 0, #integ math, business, other
+      TRUE ~ NA_real_
+    ),
+    
+    math_level2 = ordered(
+      case_when(
+       # ageo, alg 1, pre-alg, other, business, integrated math 1/2
+      s2himath12 %in% c(1,2,5,13,14,18,19) ~ "remedial",
+      # alg 2, integrated math III
+      s2himath12 %in% c(3,15) ~ "on-level", 
+       # trig/precalc, alg3, analytic geometry
+      s2himath12 %in% c(4,6,7,8) ~ "advanced",
+      # stats, calc, AP/IB
+      s2himath12 %in% c(9,10,11,12,16) ~ "double advanced",
+      TRUE ~ NA_real_
+    ),
+     levels = c("remedial", "on-level", 
+                 "advanced", "double advanced")
+  ),
+
 
     # math_4level: ordinal categorical (low → high)
-    math_4level = ordered(
+    math_level1 = ordered(
       case_when(
-        x3thimath9 <= 3 ~ "1 remedial",
-        x3thimath9 == 4 ~ "2 on-level",
-        x3thimath9 == 5 ~ "3 advanced",
-        x3thimath9 >= 6 ~ "4 double advanced"
+        x3thimath9 <= 3 ~ "remedial",
+        x3thimath9 == 4 ~ "on-level",
+        x3thimath9 == 5 ~ "advanced",
+        x3thimath9 >= 6 ~ "double advanced",
+        TRUE ~ NA_real_
+        
       ),
-      levels = c("1 remedial", "2 on-level", 
-                 "3 advanced", "4 double advanced")
+      levels = c("remedial", "on-level", 
+                 "advanced", "double advanced")
     )
   )
+```
 
+## Demographics & Controls
+```{r}
 # ---------------------------
 # Controls
 # ---------------------------
@@ -161,6 +168,9 @@ hsls <- hsls %>%
 
     # math_score: continuous numeric
     math_score = ifelse(x1txmquint < 0, NA, x1txmtscor),
+    
+    # early algebra: binary numeric
+    early_algebra = ifelse(s1m8 >=4 & s1m8 !=9, 1, 0),
 
     # public: binary numeric (1 = public, 0 = private)
     public = case_when(
@@ -183,6 +193,13 @@ hsls <- hsls %>%
 
     # frpl: binary numeric
     frpl = ifelse(x1poverty185 == 0, "0 no", "1 yes"),
+    
+    # SES
+    ses_quintile1 = x1sesq5,
+    ses_quintile2 = x2sesq5,
+    ses1 = x1ses,
+    ses2 = x2ses,
+
 
     # pov_level: ordinal numeric (1 = deepest poverty → 4 = no poverty)
     pov_level = ordered(
@@ -234,9 +251,63 @@ hsls <- hsls %>%
       )
     )
   )
+```
+
+## Math Affect
+
+```{r}
+# ---------------------------
 
 # ---------------------------
-# Parent involvement
+
+hsls <- hsls %>%  
+ mutate(
+    scale_math_id1  = x1mthid,
+    scale_math_id2  = x2mthid,
+    scale_math_eff1 = x1mtheff,
+    scale_math_eff2 = x2mtheff,
+    scale_math_uti1 = x1mthuti,
+    scale_math_uti2 = x2mthuti,
+    scale_math_int1 = x1mthint,
+    scale_math_int2 = x2mthint_r
+  )
+
+vars_to_numeric <- c("s1mtchmfdiff","s1mtchtreat","s1mtchintrst","s1mtcheasy",
+                     "s2mtchtreat","s2mtchintrst","s2mtcheasy")
+
+df <- df %>%
+  #mutate(across(all_of(vars_to_numeric), as.numeric)) %>%
+  mutate(
+    math_treat1 = as.numeric(s1mtchtreat),
+    math_treat2 = as.numeric(s2mtchtreat),
+    
+    # reverse code so that more agreement with positive is higher
+    math_easy1 =  5 - as.numeric(s1mtcheasy),
+    math_easy2 =  5 - as.numeric(s2mtcheasy),
+    math_interest1 =  5 - as.numeric(s1mtchintrst),
+    math_interest2 =  5 - as.numeric(s2mtchintrst)
+  ) 
+
+# Create Math Teacher Scale
+
+df <- df %>%
+  mutate(
+    scale_math_teach1 = 
+      rowMeans(
+        across(c(math_treat1, math_easy1, math_interest1))),
+    scale_math_teach2 = 
+      rowMeans(
+        across(c(math_treat2, math_easy2, math_interest2))),
+    teach_treat_std1 = as.numeric(scale(scale_math_teach1)),
+    teach_treat_std2 = as.numeric(scale(scale_math_teach2))
+    )
+```
+
+## Parent involvement
+
+```{r}
+# ---------------------------
+# Parent school involvement
 # ---------------------------
 hsls <- hsls %>%
   mutate(
@@ -250,6 +321,7 @@ hsls <- hsls %>%
                   p1fundraise +
                   p1ptconfer
   )
+
 
 # ---------------------------
 # Parent expectations
