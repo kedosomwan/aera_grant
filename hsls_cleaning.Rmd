@@ -17,10 +17,13 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 
 ```{r libraries}
 library(haven)
-library(dplyr)
+library(tidyverse)
 library(labelled)
 library(psych)
 library(broom)
+library(mice)
+library(mitools)
+library(sjPlot)
 ```
 
 ## Load Dataset
@@ -95,7 +98,7 @@ view_df(hsls_subset, show.frq = TRUE, show.prc = TRUE, show.na = TRUE,  sort = T
 ## Filter 
 ```{r}
 # drop nonresponses based on having unit non-response for highest math class in 8th grade, which we are using as our first time point, and highest math class in spring 2012, and higest math credit. also those not taking math 9th grade
-hsls <- hsls_subset %>% dplyr::filter(!is.na(x3thimath9), x3thimath9 > 0, !is.na(x3thimath), !is.na(x3tcredmat))
+hsls <- hsls_subset %>% dplyr::filter(!is.na(x3thimath9), x3thimath9 > 0, !is.na(x3tcredmat))
 ```
 
 ## Math coursework
@@ -125,7 +128,7 @@ hsls <- hsls_subset %>%
     
     math_level2 = ordered(
       case_when(
-       # ageo, alg 1, pre-alg, other, business, integrated math 1/2
+       # geo, alg 1, pre-alg, other, business, integrated math 1/2
       s2himath12 %in% c(1,2,5,13,14,18,19) ~ "remedial",
       # alg 2, integrated math III
       s2himath12 %in% c(3,15) ~ "on-level", 
@@ -133,7 +136,7 @@ hsls <- hsls_subset %>%
       s2himath12 %in% c(4,6,7,8) ~ "advanced",
       # stats, calc, AP/IB
       s2himath12 %in% c(9,10,11,12,16) ~ "double advanced",
-      TRUE ~ NA_real_
+      TRUE ~ NA_character_
     ),
      levels = c("remedial", "on-level", 
                  "advanced", "double advanced")
@@ -147,7 +150,7 @@ hsls <- hsls_subset %>%
         x3thimath9 == 4 ~ "on-level",
         x3thimath9 == 5 ~ "advanced",
         x3thimath9 >= 6 ~ "double advanced",
-        TRUE ~ NA_real_
+        TRUE ~ NA_character_
         
       ),
       levels = c("remedial", "on-level", 
@@ -275,8 +278,7 @@ hsls <- hsls %>%
 vars_to_numeric <- c("s1mtchmfdiff","s1mtchtreat","s1mtchintrst","s1mtcheasy",
                      "s2mtchtreat","s2mtchintrst","s2mtcheasy")
 
-df <- df %>%
-  #mutate(across(all_of(vars_to_numeric), as.numeric)) %>%
+hsls <- hsls %>%
   mutate(
     math_treat1 = as.numeric(s1mtchtreat),
     math_treat2 = as.numeric(s2mtchtreat),
@@ -285,12 +287,11 @@ df <- df %>%
     math_easy1 =  5 - as.numeric(s1mtcheasy),
     math_easy2 =  5 - as.numeric(s2mtcheasy),
     math_interest1 =  5 - as.numeric(s1mtchintrst),
-    math_interest2 =  5 - as.numeric(s2mtchintrst)
-  ) 
+    math_interest2 =  5 - as.numeric(s2mtchintrst))
 
 # Create Math Teacher Scale
 
-df <- df %>%
+hsls <- hsls %>%
   mutate(
     scale_math_teach1 = 
       rowMeans(
@@ -366,7 +367,7 @@ hsls <- hsls %>%
 ################################################################################
 
 
-write_dta(hsls, "data/hsls_subset_wide.dta")
+write_dta(hsls, "hsls_subset_wide.dta")
 ```
 
 # Subset, reshape, save
@@ -387,7 +388,10 @@ df <- hsls %>%
     ses1, ses2,
     starts_with("math_teach"),
     early_algebra, math_score, 
-    first_lang, race_ethnicity, female, 
+    first_lang, stud_race, par_race, female, 
+    math_cred, math_cred_semester,
+    phbae_scale, phbae, psd_scale, psd,
+    par_sch_inv, 
     urban, public,
     stu_id, starts_with("w2w1s")
   )
@@ -411,20 +415,22 @@ df_long <- df %>%
     time = if_else(time == "1", 0, 1)
   )
 
-write_dta(df_long, "data/hsls_subset_long.dta")
+write_dta(df_long, "hsls_subset_long.dta")
 ```
 
 
 
 # Imputation
 
-## Dry run & prep
+## check missing
 ```{r}
-colSums(is.na(df_long))
-df_imp_prep <- df_long %>% as_factor() %>% dplyr::select(
-  -math_treat1, -math_easy1, -math_interest1, 
-  -math_treat2, -math_easy2, -math_interest2)
-# dry run
+df_imp_prep <- df_long %>% as_factor()
+
+colSums(is.na(df_imp_prep))
+```
+
+## Dry run
+```{r}
 meth <- mice::mice(df_imp_prep, maxit = 0, m = 1)
 meth$method
 ```
