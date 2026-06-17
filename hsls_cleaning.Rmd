@@ -68,7 +68,10 @@ M1GROUP, M1ASSIGN, M1INTEREST, M1CONCEPTS, M1ALGORITHM, M1COMPSKILLS, M1PROBLEM,
 # School Characteristics 
 X1CONTROL, X2CONTROL, X3CONTROL, X4CONTROL, X1LOCALE, X2LOCALE, X3LOCALE, X4LOCALE, X4PS1CTRL, 
 # Sampling Weights
-W1STUDENT, W1PARENT, W1MATHTCH, W2STUDENT, W2W1STU, W2PARENT, W2W1PAR, W3STUDENT, W3W1STU, W3W1W2STU, W3W2STU, W3HSTRANS, W3STUDENTTR, W3W1STUTR, W3W1W2STUTR, W3W2STUTR, W4STUDENT, W4W1STU, W4W1STUP1, W4W1STUP1P2, W4W1W2W3STU, W5PSTRANS, W5PSRECORDS, W5W1W2W3W4PSTRANS, W5W1W2W3W4PSRECORDS, W3W1MATHTCH
+W1STUDENT, W1PARENT, W1MATHTCH, W2STUDENT, starts_with("W2W1STU"), W2PARENT, W2W1PAR, W3STUDENT, W3W1STU, W3W1W2STU, W3W2STU, W3HSTRANS, W3STUDENTTR, W3W1STUTR, W3W1W2STUTR, W3W2STUTR, W4STUDENT, W4W1STU, W4W1STUP1, W4W1STUP1P2, W4W1W2W3STU, W5PSTRANS, W5PSRECORDS, W5W1W2W3W4PSTRANS, W5W1W2W3W4PSRECORDS, W3W1MATHTCH,
+
+# Parent respondent status
+X1PARRESP, starts_with("W3HSTRAN")
 )
 
 names(hsls_subset) <- tolower(names(hsls_subset))
@@ -88,8 +91,8 @@ hsls_subset[hsls_subset == -1] <- NA # don't know
 # drop unused labels
 hsls_subset <- labelled::drop_unused_value_labels(hsls_subset)
 
-# view data after replacing missing values
-view_df(hsls_subset, show.frq = TRUE, show.prc = TRUE, show.na = TRUE,  sort = TRUE)
+## view data after replacing missing values
+#view_df(hsls_subset, show.frq = TRUE, show.prc = TRUE, show.na = TRUE,  sort = TRUE)
 
 ```
 
@@ -98,7 +101,7 @@ view_df(hsls_subset, show.frq = TRUE, show.prc = TRUE, show.na = TRUE,  sort = T
 ## Filter 
 ```{r}
 # drop nonresponses based on having unit non-response for highest math class in 8th grade, which we are using as our first time point, and highest math class in spring 2012, and higest math credit. also those not taking math 9th grade
-hsls <- hsls_subset %>% dplyr::filter(!is.na(x3thimath9), x3thimath9 > 0, !is.na(x3tcredmat))
+hsls <- hsls_subset %>% dplyr::filter(!is.na(x3thimath9), x3thimath9 > 0, !is.na(x3tcredmat), !is.na(x1parresp))
 ```
 
 ## Math coursework
@@ -316,11 +319,8 @@ hsls <- hsls %>%
     par_mtg = ifelse((p1ptomtg == 1 | p1schmtg == 1), 1, 0),
 
     # par_sch_inv: count variable (numeric, Poisson-type)
-    par_sch_inv = par_mtg +
-                  p1schevent +
-                  p1volunteer +
-                  p1fundraise +
-                  p1ptconfer
+    par_sch_inv = rowSums(select(., par_mtg, p1schevent, p1volunteer, 
+                                 p1fundraise, p1ptconfer), na.rm = FALSE)
   )
 
 
