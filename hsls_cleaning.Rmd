@@ -358,11 +358,89 @@ hsls <- hsls %>%
 
 ```
 
-# Save Clean Dataset
+# Save Modified Data
 
-```{r save}
-write_dta(hsls, "hsls_subset.dta")
+```{r}
+################################################################################
+# Save Subset (WIDE)
+################################################################################
+
+
+write_dta(hsls, "data/hsls_subset_wide.dta")
 ```
+
+# Subset, reshape, save
+```{r}
+
+df <- hsls %>%
+  dplyr::select(
+    scale_math_id1, scale_math_id2,
+    adv_math1, adv_math2,
+    math_level1, math_level2,
+    scale_math_eff1, scale_math_eff2,
+    scale_math_uti1, scale_math_uti2,
+    scale_math_int1, scale_math_int2,
+    teach_treat_std1, teach_treat_std2,
+    math_treat1, math_easy1, math_interest1, 
+    math_treat2, math_easy2, math_interest2,
+    ses_quintile1, ses_quintile2,
+    ses1, ses2,
+    starts_with("math_teach"),
+    early_algebra, math_score, 
+    first_lang, race_ethnicity, female, 
+    urban, public,
+    stu_id, starts_with("w2w1s")
+  )
+
+
+df_long <- df %>%
+  pivot_longer(
+    cols = c(scale_math_id1, scale_math_id2,
+             scale_math_eff1, scale_math_eff2,
+             scale_math_uti1, scale_math_uti2,
+             scale_math_int1, scale_math_int2,
+             teach_treat_std1, teach_treat_std2,
+             math_treat1, math_easy1, math_interest1, 
+             math_treat2, math_easy2, math_interest2,
+             adv_math1, adv_math2, math_level1, math_level2,
+             ses_quintile1, ses_quintile2, ses1, ses2),
+    names_to = c(".value","time"),
+    names_pattern = "(.*)([12])"
+  ) %>%
+  mutate(
+    time = if_else(time == "1", 0, 1)
+  )
+
+write_dta(df_long, "data/hsls_subset_long.dta")
+```
+
+
+
+# Imputation
+
+## Dry run & prep
+```{r}
+colSums(is.na(df_long))
+df_imp_prep <- df_long %>% as_factor() %>% dplyr::select(
+  -math_treat1, -math_easy1, -math_interest1, 
+  -math_treat2, -math_easy2, -math_interest2)
+# dry run
+meth <- mice::mice(df_imp_prep, maxit = 0, m = 1)
+meth$method
+```
+
+## Impute!
+```{r}
+start_time <- Sys.time()
+
+df_imp <- mice(df_imp_prep, m = 20, nnet.MaxNWts = 3000)
+end_time <- Sys.time()
+end_time - start_time
+save(df_imp, file = "data/df_imp.rdata")
+
+
+```
+
 
 
 
