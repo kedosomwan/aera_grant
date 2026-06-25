@@ -451,7 +451,7 @@ write_dta(df_long, "hsls_subset_long.dta")
 ```{r}
 df_imp_prep <- hsls %>% as_factor() %>% dplyr::select(
   starts_with("w3hstrans"), psd_scale, phbae_scale, par_sch_inv, 
-  x1race, x1ses, female, math_level1, highest_math, iss, # x1mthint, x1mthuti, x1mtheff, x1mthid,
+  x1race, x1ses, female, math_level1, highest_math, advanced_mathematics, iss, 
   math_score, early_algebra,
   urban, public)
 
