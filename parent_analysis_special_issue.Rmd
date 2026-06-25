@@ -39,7 +39,9 @@ psych::alpha(home)
 
 ```
 
-# Ordinal Regression
+# Uninputed
+
+## Ordinal Regression
 ```{r}
 # load library for ordinal regression
 library(ordinal)
@@ -67,7 +69,7 @@ olr %>% tbl_regression(exp = TRUE)   %>%
 
 
 
-# Logistic Regressin
+## Logistic Regression
 ```{r}
 glm <- glm(data = df_analysis,
            advanced_mathematics ~ 
@@ -93,8 +95,8 @@ glm %>% tbl_regression(exp = TRUE) %>%
 library(survey)
 
 df_brr <- svrepdesign(
-  weights = ~w3hstranscript, 
-  repweights = "w1parent[0-9]+",
+  weights = ~w3hstrans, 
+  repweights = "w3hstrans[001-200]+",
   type = "BRR", 
   data = df_analysis,
   combined.weights = TRUE
@@ -102,12 +104,88 @@ df_brr <- svrepdesign(
 
 
 ```
+## Ordinal Regression
+```{r}
+# set Asian as racial reference
+df_analysis$x1race <- fct_relevel(df_analysis$x1race, "Asian, non-Hispanic")
 
+# run ordinal regression
+svy_olr <- svyolr(design = df_brr,
+ ordered(highest_math) ~
+    psd_scale + phbae_scale + par_sch_inv + # parent factors
+    x1race + x1ses + female + # ses/demographics
+    as.numeric(math_level1) + math_score + # prior achievement
+    # x1mthid + x1mtheff + x1mthint + x1mthuti + # affect
+    iss + urban + public) # school level
+
+# get table
+svy_olr %>% tbl_regression(exp = TRUE)   %>% 
+  add_glance_source_note() %>% 
+  #add_significance_stars(hide_p = TRUE, hide_se = FALSE, hide_ci = FALSE) %>% 
+  as_flex_table()
+
+
+```
+
+
+
+## Logistic Regression
+```{r}
+svy_glm <- svyglm(design = df_brr,
+           advanced_mathematics ~ 
+             psd_scale + phbae_scale + par_sch_inv + # parent factors
+             x1race + x1ses + female + # ses/demographics
+             early_algebra + as.numeric(math_level1) + math_score + # prior achievement
+             #x1mthid + x1mtheff + x1mthint + x1mthuti + # affect
+             iss + urban + public, # school level
+           family = quasibinomial)
+
+# export_summs(svy_glm, exp = TRUE)
+
+svy_glm %>% tbl_regression(exp = TRUE) %>% 
+  add_glance_source_note() %>% 
+  add_significance_stars(hide_p = TRUE, hide_se = FALSE, hide_ci = FALSE) %>% 
+  as_flex_table()
+
+```
+
+# Imputed Data
+```{r}
+library(mitools)
+library(mice)
+load("df_imp.rdata")
+```
+
+## Unweighted
+
+### Ordinal Regression
+```{r}
+# load library for ordinal regression
+library(ordinal)
+
+# set Asian as racial reference
+df_imp$data$x1race <- fct_relevel(df_imp$data$x1race, "Asian, non-Hispanic")
+
+# run ordinal regression
+olr_imp <- with(df_imp, clm(
+ ordered(highest_math) ~
+    psd_scale + phbae_scale + par_sch_inv + # parent factors
+    x1race + x1ses + female + # ses/demographics
+    as.numeric(math_level1) + math_score + # prior achievement
+    # x1mthid + x1mtheff + x1mthint + x1mthuti + # affect
+    iss + urban + public)) # school level
+
+# get table
+olr_imp %>% tbl_regression(exp = TRUE)   %>% 
+  add_glance_source_note() %>% 
+  add_significance_stars(hide_p = TRUE, hide_se = FALSE, hide_ci = FALSE) %>% 
+  as_flex_table()
+```
+
+
+## Weighted
 ### BRR Weight Data Imputed
 ```{r}
-library(survey)
-library(mitools)
-
 # Creates a list of completed dataset for survey weights
 imp_list <- imputationList(
   lapply(1:df_imp$m, function(i) complete(df_imp, i))
@@ -115,12 +193,12 @@ imp_list <- imputationList(
 
 # creates BRR survey design
 df_brr_imp <- svrepdesign(
-  weights = ~w1parent, 
-  repweights = "w1parent[0-9]+",
+  weights = ~w3hstrans, 
+  repweights = "w3hstrans[001-200]+",
   type = "BRR", 
   data = imp_list,
   combined.weights = TRUE
-) 
+)
 
 # function to exponentiate results and create dataframe with or, se, ll, ul, & p-value
 make_mi_table <- function(model) {
@@ -133,4 +211,23 @@ make_mi_table <- function(model) {
     z = results / se, 
     p.value = 2 * (1 - pnorm(abs(z)))) # calculate p-value with Wald Test
 }
+```
+
+### Ordinal Regression
+```{r}
+# run ordinal regression
+olr_imp_svy <- with(df_brr_imp, svyolr(
+ ordered(highest_math) ~
+    psd_scale + phbae_scale + par_sch_inv + # parent factors
+    x1race + x1ses + female + # ses/demographics
+    as.numeric(math_level1) + math_score + # prior achievement
+    iss + urban + public)) # school level
+
+# get table
+olr_imp_svy %>% tbl_regression(exp = TRUE)   %>% 
+  add_glance_source_note() %>% 
+  #add_significance_stars(hide_p = TRUE, hide_se = FALSE, hide_ci = FALSE) %>% 
+  as_flex_table()
+
+
 ```
