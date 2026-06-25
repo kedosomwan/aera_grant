@@ -54,7 +54,7 @@ olr <- clm(data = df_analysis,
     x1race + x1ses + female + # ses/demographics
     math_level1 + math_score + # prior achievement
     # x1mthid + x1mtheff + x1mthint + x1mthuti + # affect
-    urban + public) # school level
+    iss + urban + public) # school level
 
 # get table
 olr %>% tbl_regression(exp = TRUE)   %>% 
@@ -75,7 +75,7 @@ glm <- glm(data = df_analysis,
              x1race + x1ses + female + # ses/demographics
              early_algebra + as.numeric(math_level1) + math_score + # prior achievement
              #x1mthid + x1mtheff + x1mthint + x1mthuti + # affect
-             urban + public, # school level
+             iss + urban + public, # school level
            family = binomial)
 
 export_summs(glm, exp = TRUE)
