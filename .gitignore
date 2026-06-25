@@ -4,4 +4,5 @@
 .Ruserdata
 .positai
 *.dta
+*.rdata
 hsls_cleaning_2026_04_27_v01.Rmd

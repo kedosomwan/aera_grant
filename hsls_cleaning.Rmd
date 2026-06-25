@@ -110,7 +110,7 @@ hsls %>% count(x3thimath9, s1m8)
 # ---------------------------
 # Treatment variables
 # ---------------------------
-hsls <- hsls_subset %>%
+hsls <- hsls %>%
   mutate(
     math_cred = x3tcredmat,
     math_cred_semester = x3tcredmat*2,
@@ -336,11 +336,12 @@ hsls <- hsls %>%
 hsls <- hsls %>%
   mutate(
     # par_sch_inv: count variable (numeric, Poisson-type)
-    par_sch_inv = rowSums(select(., p1schevent, p1volunteer, 
-                                 p1fundraise, p1ptconfer, p1ptomtg, p1schmtg),
-                          na.rm = FALSE)
+    par_sch_inv = rowSums(
+      select(., p1schevent, p1volunteer, p1fundraise, p1ptconfer, 
+             p1ptomtg, p1schmtg),
+      na.rm = FALSE
+    )
   )
-
 
 # ---------------------------
 # Parent expectations
@@ -370,9 +371,9 @@ hsls <- hsls %>%
   mutate(
     # na.rm = TRUE means it will calculate based on available values
     psd = rowMeans(select(., s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks), na.rm = TRUE),
-    psd_scale = scale(psd),
+    psd_scale = as.numeric(scale(psd)),
     phbae = rowMeans(select(., p1eduexpect, p1eduaspire, able_ba1), na.rm = TRUE),
-    phbae_scale = scale(phbae)
+    phbae_scale = as.numeric(scale(phbae))
   )
 
 ```
@@ -383,7 +384,6 @@ hsls <- hsls %>%
 ################################################################################
 # Save Subset (WIDE)
 ################################################################################
-
 
 write_dta(hsls, "hsls_subset_wide.dta")
 ```
@@ -446,8 +446,11 @@ write_dta(df_long, "hsls_subset_long.dta")
 
 ## check missing
 ```{r}
-df_imp_prep <- df_long %>% as_factor() %>% dplyr::select(
-  -par_exp1:s1dadtalks)
+df_imp_prep <- hsls %>% as_factor() %>% dplyr::select(
+  starts_with("w3hstrans"), psd_scale, phbae_scale, par_sch_inv, 
+  x1race, x1ses, female, math_level1, highest_math, # x1mthint, x1mthuti, x1mtheff, x1mthid,
+  math_score, early_algebra,
+  urban, public)
 
 colSums(is.na(df_imp_prep))
 ```
