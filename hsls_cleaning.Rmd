@@ -101,7 +101,7 @@ hsls_subset <- labelled::drop_unused_value_labels(hsls_subset)
 ## Filter 
 ```{r}
 # drop nonresponses based on having unit non-response for highest math class in 8th grade, which we are using as our first time point, and highest math class in spring 2012, and higest math credit. also those not taking math 9th grade
-hsls <- hsls_subset %>% dplyr::filter(!is.na(x3thimath9), x3thimath9 > 0, !is.na(x3tcredmat), !is.na(x1parresp))
+hsls <- hsls_subset %>% dplyr::filter(!is.na(x3thimath9), !is.na(x1parresp))
 ```
 
 ## Math coursework
@@ -125,7 +125,15 @@ hsls <- hsls_subset %>%
       TRUE ~ NA_real_
     ),
 
+    advanced_mathematics = ifelse(x3thimath > 7, 1, 0),
     # adv_math: binary numeric (0 = not advanced, 1 = advanced)
+    
+    highest_math = case_when(
+      x3thimath  %in% c(0,1,2,3,4,5) ~ 1,    # Geometry or Below
+      x3thimath  %in% c(6) ~ 2,              # Algebra II
+      x3thimath  %in% c(7,8,9,11) ~ 3,       # Advanced Math
+      x3thimath  %in% c(10, 12, 13) ~ 4,              # Calculus or AP/IB math
+    TRUE ~ NA_real_),
     
     adv_math1 = case_when(
       x3thimath9 <= 4 ~ 0, # algebra 1 and below
@@ -386,6 +394,7 @@ write_dta(hsls, "hsls_subset_wide.dta")
 df <- hsls %>%
   dplyr::select(
     scale_math_id1, scale_math_id2,
+    advanced_mathematics, highest_math,
     adv_math1, adv_math2,
     math_level1, math_level2,
     math_cred3, math_cred4,
