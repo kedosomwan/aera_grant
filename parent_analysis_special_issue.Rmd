@@ -18,7 +18,7 @@ library(jtools)
 library(psych)
 library(EFAtools)
 library(lavaan)
-df_subset <- haven::read_dta("hsls_subset_long.dta") # can use numeric values
+df_subset <- haven::read_dta("hsls_subset_wide.dta") # can use numeric values
 df_analysis <- df_subset %>% haven::as_factor() #make it factors
 ```
 # Reliability and Validity
@@ -39,54 +39,48 @@ psych::alpha(home)
 
 ```
 
-#  Linear Regression
+# Ordinal Regression
 ```{r}
+# load library for ordinal regression
+library(MASS)
 
-lm <- lm(data = df_analysis,
- math_cred ~ # do this by semester since there are half credits
+# set Asian as racial reference
+df_analysis$x1race <- relevel(df_analysis$x1race, ref = "Asian, non-Hispanic")
+
+# run ordinal regression
+olr <- polr(data = df_analysis,
+ ordered(highest_math) ~
     psd_scale + phbae_scale + par_sch_inv + # parent factors
-    x1race + ses + female + # ses/demographics
-    as.numeric(math_level) + math_score + # prior achievement
-    scale_math_eff + scale_math_uti + scale_math_int + scale_math_id + # affect
-    time*as.numeric(math_level) +
+    x1race + x1ses + female + # ses/demographics
+    as.numeric(math_level1) + math_score + # prior achievement
+    x1mthid + x1mtheff + x1mthint + x1mthuti + # affect
     urban + public) # school level
 
 
-lm %>% tbl_regression()
+# get table
+olr %>% tbl_regression(exp = TRUE)
+
 
 ```
 
-#  Poisson Regression
-```{r}
 
-poi <- glm(data = df_analysis,
- 2*math_cred ~ # do this by semester since there are half credits
-    psd_scale + phbae_scale + par_sch_inv + # parent factors
-    x1race + ses + female + # ses/demographics
-    as.numeric(math_level) + math_score + # prior achievement
-    scale_math_eff + scale_math_uti + scale_math_int + scale_math_id + # affect
-    urban + public,# school level
- family = poisson) 
-
-
-summ(poi)
-
-```
 
 # Logistic Regressin
 ```{r}
 glm <- glm(data = df_analysis,
-           math_cred4 ~ 
+           advanced_mathematics ~ 
              psd_scale + phbae_scale + par_sch_inv + # parent factors
-             x1race + ses + female + # ses/demographics
-             middle_math + math_score + # prior achievement
-             scale_math_eff + scale_math_uti + scale_math_int + scale_math_id + # affect
-             public, public, # school level
-           weights = NULL,
+             x1race + x1ses + female + # ses/demographics
+             early_algebra + as.numeric(math_level1) + math_score + # prior achievement
+             x1mthid + x1mtheff + x1mthint + x1mthuti + # affect
+             urban + public, # school level
            family = binomial)
 
 
-summ(glm, exp = TRUE)
+glm %>% tbl_regression(exp = TRUE) %>% 
+  add_glance_source_note() %>% 
+  add_significance_stars(hide_p = TRUE, hide_se = FALSE, hide_ci = FALSE) %>% 
+  as_flex_table()
 
 ```
 
