@@ -18,16 +18,16 @@ library(jtools)
 library(psych)
 library(EFAtools)
 library(lavaan)
-hsls <- haven::read_dta("hsls_subset.dta") # can use numeric values
-df <- hsls %>% haven::as_factor() #make it factors
+df_subset <- haven::read_dta("hsls_subset_long.dta") # can use numeric values
+df_analysis <- df_subset %>% haven::as_factor() #make it factors
 ```
 # Reliability and Validity
 
 ## Subset Parent Questions for pa Year
 ```{r}
-psd <- hsls %>% dplyr::select(s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)
-phbae <- hsls %>% dplyr::select(par_exp1, par_asp1, able_ba1)
-home <- hsls %>% dplyr::select(par_exp1, par_asp1, able_ba1, s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)
+psd <- df_subset %>% dplyr::select(s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)
+phbae <- df_subset %>% dplyr::select(par_exp1, par_asp1, able_ba1)
+home <- df_subset %>% dplyr::select(par_exp1, par_asp1, able_ba1, s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)
 
 ```
 
@@ -42,29 +42,48 @@ psych::alpha(home)
 #  Linear Regression
 ```{r}
 
-lm <- lm(data = hsls,
- scale(x3tcredmat) ~ # do this by semester since there are half credits
+lm <- lm(data = df_analysis,
+ math_cred ~ # do this by semester since there are half credits
     psd_scale + phbae_scale + par_sch_inv + # parent factors
-    as.factor(x1race) + frpl + par_ba + female + # ses/demographics
-    s1m8 + x1txmtscor + # prior achievement
-    x1mtheff + x1mthuti + x1mthint + x1mthid + # affective
-    as.factor(x1locale) + x1control) # school level
+    x1race + ses + female + # ses/demographics
+    as.numeric(math_level) + math_score + # prior achievement
+    scale_math_eff + scale_math_uti + scale_math_int + scale_math_id + # affect
+    time*as.numeric(math_level) +
+    urban + public) # school level
 
 
-summ(lm)
+lm %>% tbl_regression()
+
+```
+
+#  Poisson Regression
+```{r}
+
+poi <- glm(data = df_analysis,
+ 2*math_cred ~ # do this by semester since there are half credits
+    psd_scale + phbae_scale + par_sch_inv + # parent factors
+    x1race + ses + female + # ses/demographics
+    as.numeric(math_level) + math_score + # prior achievement
+    scale_math_eff + scale_math_uti + scale_math_int + scale_math_id + # affect
+    urban + public,# school level
+ family = poisson) 
+
+
+summ(poi)
 
 ```
 
 # Logistic Regressin
 ```{r}
-glm <- glm(data = df,
- adv_math ~ # do this by semester since there are half credits
-    psd_scale + phbae_scale + par_sch_inv + # parent factors
-    as.factor(x1race) + frpl + par_ba + female + # ses/demographics
-    s1m8 + x1txmtscor + # prior achievement
-    x1mtheff + x1mthuti + x1mthint + x1mthid + # affective
-    as.factor(x1locale) + x1control, # school level
- family = binomial)
+glm <- glm(data = df_analysis,
+           math_cred4 ~ 
+             psd_scale + phbae_scale + par_sch_inv + # parent factors
+             x1race + ses + female + # ses/demographics
+             middle_math + math_score + # prior achievement
+             scale_math_eff + scale_math_uti + scale_math_int + scale_math_id + # affect
+             public, public, # school level
+           weights = NULL,
+           family = binomial)
 
 
 summ(glm, exp = TRUE)
