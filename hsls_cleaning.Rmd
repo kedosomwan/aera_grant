@@ -69,6 +69,8 @@ M1GROUP, M1ASSIGN, M1INTEREST, M1CONCEPTS, M1ALGORITHM, M1COMPSKILLS, M1PROBLEM,
 X1CONTROL, X2CONTROL, X3CONTROL, X4CONTROL, X1LOCALE, X2LOCALE, X3LOCALE, X4LOCALE, X4PS1CTRL, 
 # Sampling Weights
 W1STUDENT, W1PARENT, W1MATHTCH, W2STUDENT, starts_with("W2W1STU"), W2PARENT, W2W1PAR, W3STUDENT, W3W1STU, W3W1W2STU, W3W2STU, W3HSTRANS, W3STUDENTTR, W3W1STUTR, W3W1W2STUTR, W3W2STUTR, W4STUDENT, W4W1STU, W4W1STUP1, W4W1STUP1P2, W4W1W2W3STU, W5PSTRANS, W5PSRECORDS, W5W1W2W3W4PSTRANS, W5W1W2W3W4PSRECORDS, W3W1MATHTCH,
+# Suspension
+S2INSCHSUSP,
 
 # Parent respondent status
 X1PARRESP, starts_with("W3HSTRAN")
@@ -202,7 +204,8 @@ hsls <- hsls %>%
     public = case_when(
       x1control == 1 ~ "1 public",
       x1control == 2 ~ "0 private"
-    )
+    ),
+    iss = ifelse(s2inschsusp == 1, 0, 1)
   )
 
 # ---------------------------
@@ -413,7 +416,7 @@ df <- hsls %>%
     phbae_scale, phbae, psd_scale, psd,
     s1dadtalks, s1momtalks, s1dadtalkm, s1momtalkm,
     par_exp1, par_asp1, able_ba1,
-    par_sch_inv, 
+    par_sch_inv, iss,
     urban, public,
     stu_id, starts_with("w2w1s")
   )
@@ -448,7 +451,7 @@ write_dta(df_long, "hsls_subset_long.dta")
 ```{r}
 df_imp_prep <- hsls %>% as_factor() %>% dplyr::select(
   starts_with("w3hstrans"), psd_scale, phbae_scale, par_sch_inv, 
-  x1race, x1ses, female, math_level1, highest_math, # x1mthint, x1mthuti, x1mtheff, x1mthid,
+  x1race, x1ses, female, math_level1, highest_math, iss, # x1mthint, x1mthuti, x1mtheff, x1mthid,
   math_score, early_algebra,
   urban, public)
 
@@ -468,7 +471,7 @@ start_time <- Sys.time()
 df_imp <- mice(df_imp_prep, m = 20, nnet.MaxNWts = 3000)
 end_time <- Sys.time()
 end_time - start_time
-save(df_imp, file = "data/df_imp.rdata")
+save(df_imp, file = "df_imp.rdata")
 
 
 ```
