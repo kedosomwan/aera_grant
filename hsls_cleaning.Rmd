@@ -106,6 +106,7 @@ hsls <- hsls_subset %>% dplyr::filter(!is.na(x3thimath9), x3thimath9 > 0, !is.na
 
 ## Math coursework
 ```{r}
+hsls %>% count(x3thimath9, s1m8)
 # ---------------------------
 # Treatment variables
 # ---------------------------
@@ -113,6 +114,17 @@ hsls <- hsls_subset %>%
   mutate(
     math_cred = x3tcredmat,
     math_cred_semester = x3tcredmat*2,
+    math_cred3 = ifelse(math_cred >= 3, 1, 0),
+    math_cred4 = ifelse(math_cred >=4, 1, 0),
+    
+    # early algebra
+      middle_math = case_when(
+        s1m8 < 4 ~ 1,
+        s1m8 %in% c(4,5,7) ~ 2,
+        s1m8 %in% 6 ~ 3,
+      TRUE ~ NA_real_
+    ),
+
     # adv_math: binary numeric (0 = not advanced, 1 = advanced)
     
     adv_math1 = case_when(
@@ -315,12 +327,10 @@ hsls <- hsls %>%
 # ---------------------------
 hsls <- hsls %>%
   mutate(
-    # par_mtg: binary numeric
-    par_mtg = ifelse((p1ptomtg == 1 | p1schmtg == 1), 1, 0),
-
     # par_sch_inv: count variable (numeric, Poisson-type)
-    par_sch_inv = rowSums(select(., par_mtg, p1schevent, p1volunteer, 
-                                 p1fundraise, p1ptconfer), na.rm = FALSE)
+    par_sch_inv = rowSums(select(., p1schevent, p1volunteer, 
+                                 p1fundraise, p1ptconfer, p1ptomtg, p1schmtg),
+                          na.rm = FALSE)
   )
 
 
@@ -378,6 +388,7 @@ df <- hsls %>%
     scale_math_id1, scale_math_id2,
     adv_math1, adv_math2,
     math_level1, math_level2,
+    math_cred3, math_cred4,
     scale_math_eff1, scale_math_eff2,
     scale_math_uti1, scale_math_uti2,
     scale_math_int1, scale_math_int2,
@@ -385,12 +396,14 @@ df <- hsls %>%
     math_treat1, math_easy1, math_interest1, 
     math_treat2, math_easy2, math_interest2,
     ses_quintile1, ses_quintile2,
-    ses1, ses2,
+    ses1, ses2, x1race,
     starts_with("math_teach"),
-    early_algebra, math_score, 
+    early_algebra, math_score, middle_math,
     first_lang, stud_race, par_race, female, 
     math_cred, math_cred_semester,
     phbae_scale, phbae, psd_scale, psd,
+    s1dadtalks, s1momtalks, s1dadtalkm, s1momtalkm,
+    par_exp1, par_asp1, able_ba1,
     par_sch_inv, 
     urban, public,
     stu_id, starts_with("w2w1s")
@@ -424,7 +437,8 @@ write_dta(df_long, "hsls_subset_long.dta")
 
 ## check missing
 ```{r}
-df_imp_prep <- df_long %>% as_factor()
+df_imp_prep <- df_long %>% as_factor() %>% dplyr::select(
+  -par_exp1:s1dadtalks)
 
 colSums(is.na(df_imp_prep))
 ```
