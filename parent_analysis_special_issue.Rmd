@@ -215,6 +215,7 @@ make_mi_table <- function(model) {
 
 ### Ordinal Regression
 ```{r}
+start_time <- Sys.time()
 # run ordinal regression
 olr_imp_svy <- with(df_brr_imp, svyolr(
  ordered(highest_math) ~
@@ -222,12 +223,11 @@ olr_imp_svy <- with(df_brr_imp, svyolr(
     x1race + x1ses + female + # ses/demographics
     as.numeric(math_level1) + math_score + # prior achievement
     iss + urban + public)) # school level
-
+end_time <- Sys.time()
+end_time - start_time
 # get table
-olr_imp_svy %>% tbl_regression(exp = TRUE)   %>% 
-  add_glance_source_note() %>% 
-  #add_significance_stars(hide_p = TRUE, hide_se = FALSE, hide_ci = FALSE) %>% 
-  as_flex_table()
+olr_imp_svy_tbl <- make_mi_table(olr_imp_svy)
+write_csv(olr_imp_svy_tbl, "brr_results.csv")
 
 
 ```
