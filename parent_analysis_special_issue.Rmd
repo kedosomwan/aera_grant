@@ -63,8 +63,6 @@ olr %>% tbl_regression(exp = TRUE)   %>%
   add_glance_source_note() %>% 
   add_significance_stars(hide_p = TRUE, hide_se = FALSE, hide_ci = FALSE) %>% 
   as_flex_table()
-
-
 ```
 
 
@@ -215,6 +213,7 @@ make_mi_table <- function(model) {
 
 ### Ordinal Regression
 ```{r}
+library(flextable)
 start_time <- Sys.time()
 # run ordinal regression
 olr_imp_svy <- with(df_brr_imp, svyolr(
@@ -228,6 +227,19 @@ end_time - start_time
 # get table
 olr_imp_svy_tbl <- make_mi_table(olr_imp_svy)
 write_csv(olr_imp_svy_tbl, "brr_results.csv")
-
+olr_imp_svy_tbl %>% dplyr::select(variable, or, se, ll, ul, p.value) %>% 
+  mutate(
+    SE = round(se, 2),
+    LL = round(ll, 2),
+    UL = round(ul, 2),
+    stars = case_when(
+      p.value < 0.001 ~ "***",
+      p.value < 0.01  ~ "**",
+      p.value < 0.05  ~ "*",
+      TRUE ~ ""),
+    or_round = round(or, 2),
+    OR = paste0(formatC(or_round, format = "f", digits = 2), stars)
+    ) %>% dplyr::select(variable, OR, SE, LL, UL) %>% 
+  flextable() 
 
 ```
