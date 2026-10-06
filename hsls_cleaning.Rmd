@@ -59,7 +59,7 @@ S1M8, S1S8, X3T1CREDALG1, X3T1CREDALG2, X3T1CREDCALC, X3T1CREDCHEM, X3T1CREDPHYS
 # Postsecondary STEM major and coursework
 X4RFDGMJSTEM, X5STEMCRED, X5STEM1ATT, X5STEM1ERN, X5STEM1GPA, X5STEM3ATT, X5STEM3ERN, X5STEM3GPA,
 # Parent Expectations & Educational Engagement
-P1EDUASPIRE, P1EDUEXPECT, P1FUNDRAISE, P1HONORS, P1MTHHWEFF, P1PTCONFER, P1PTOMTG, P1COUNSELOR, P1SCHEVENT, P1SCHMTG, P1SCIFAIR, P1SCIHWEFF, P1SCIPROJ, P1STEMDISC, P1VOLUNTEER, P1ABLEBA, P2EDUASP, P2EDUEXP, P2ABLEBA, P2DISCCOURSES, P2MTHHWEFF, P2SCIHWEFF, P2SCIPROJ, P2STEMDISC, S1DADTALKM, S1DADTALKS, S1MOMTALKM, S1MOMTALKS,
+P1EDUASPIRE, P1EDUEXPECT, P1FUNDRAISE, P1HONORS, P1MTHHWEFF, P1PTCONFER, P1PTOMTG, P1COUNSELOR, P1SCHEVENT, P1SCHMTG, P1SCIFAIR, P1SCIHWEFF, P1SCIPROJ, P1STEMDISC, P1VOLUNTEER, P1ABLEBA, P1ELLEVER, P2EDUASP, P2EDUEXP, P2ABLEBA, P2DISCCOURSES, P2MTHHWEFF, P2SCIHWEFF, P2SCIPROJ, P2STEMDISC, S1DADTALKM, S1DADTALKS, S1MOMTALKM, S1MOMTALKS,
 # Math Teacher Expectations and Beliefs [Scales in Red]
 X1TMCOMM, M1SHRIDEAS, M1WORKSHOP, M1SHRSTWRK, M1SHRLESSONS, M1SHRBELIEFS, M1SHRMTHDS, M1SHRELL, M1SHRAPPRCH, M1SHRCONTENT, M1EFFECTIVE, M1MENTOR, M1CHAIR, 
 X1MTHEFF, M1FAMILY, M1DISCIPLINE, M1STUACHIEVE, M1PARENT, M1RETAIN, M1REDIRECT, M1GETTHRU, M1HOMEFX, 
@@ -438,7 +438,8 @@ hsls <- hsls %>%
         p1eduaspire  == 4      ~ 2,
         p1eduaspire  == 6      ~ 3,
         p1eduaspire  == 8      ~ 4,
-        p1eduaspire  == 10     ~ 5))
+        p1eduaspire  == 10     ~ 5),
+    )
 
 # ---------------------------
 # Create Scales
@@ -474,7 +475,7 @@ df_imp_prep <- hsls %>% haven::as_factor() %>%  dplyr::select(
   stu_id,
   starts_with("w3hstrans"), psd, phbae, par_sch_inv, par_race, x3thimath,
   x1ses, female, math_level1, highest_math,
-  asian_ec, black_ec, another_ec, latinx_ec, multi_ec, first_lang,
+  asian_ec, black_ec, another_ec, latinx_ec, multi_ec, first_lang, p1ellever,
   iss, math_score, early_algebra, urban, public)
 
 colSums(is.na(df_imp_prep))
