@@ -30,7 +30,7 @@ library(parallel)
 ## Load Dataset
 ```{r}
 start_time <- Sys.time()
-hsls_raw <- read_dta("hsls_17_student_pets_sr_v1_0.dta")
+hsls_raw <- read_dta("data/hsls_17_student_pets_sr_v1_0.dta")
 end_time <- Sys.time()
 end_time-start_time
 ```
@@ -463,7 +463,7 @@ hsls <- hsls %>%
 # Save Modified Data
 
 ```{r}
-write_dta(hsls, "hsls_subset.dta")
+write_dta(hsls, "data/hsls_subset.dta")
 ```
 
 # Imputation
@@ -505,7 +505,7 @@ end_time <- Sys.time()
 end_time - start_time
 
 # save imputed data
-save(df_imp, file = "df_imp.rdata")
+save(df_imp, file = "data/df_imp.rdata")
 ```
 
 
