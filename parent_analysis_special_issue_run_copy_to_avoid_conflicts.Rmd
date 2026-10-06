@@ -118,9 +118,7 @@ svy_olr <- svyolr(design = df_brr,
 svy_olr %>% 
   tbl_regression(
     exp = TRUE) %>% 
-  add_glance_table(
-    glance_fun = performance::model_performance #,include = c(R2_Tjur, AIC, RMSE)
-    ) %>% 
+  add_global_p() %>% 
   add_significance_stars(hide_p = TRUE, hide_se = FALSE, hide_ci = FALSE) %>% 
   as_flex_table()
 
@@ -142,7 +140,7 @@ svy_glm <- svyglm(
   family = quasibinomial)
 
 svy_glm %>% tbl_regression(exp = TRUE) %>% 
-  add_glance_source_note() %>% 
+  add_global_p() %>% 
   add_significance_stars(hide_p = TRUE, hide_se = FALSE, hide_ci = FALSE) %>% 
   as_flex_table()
 
@@ -161,7 +159,7 @@ load("data/df_imp.rdata")
 
 # standardize scales
 df_imp$data$par_sch_inv_z <- scale(df_imp$data$par_sch_inv)
-df_imp$data$phae_z <- scale(df_imp$data$phae)
+df_imp$data$phae_z <- scale(df_imp$data$phbae)
 df_imp$data$psd_z <- scale(df_imp$data$psd)
 
 # make highest math ordered
@@ -194,13 +192,13 @@ df_imp$data$another_par_ec <- ifelse(df_imp$data$par_race == "Indigenous", 1,
 ```{r}
 # load library for ordinal regression
 library(ordinal)
-
+start_time <- Sys.time()
 # run ordinal regression
 olr_imp <- with(
   df_imp, 
   clm(
     highest_math_ord ~
-    phae_z + psd_z par_sch_inv_z + # parent factors
+    phae_z + psd_z + par_sch_inv_z + # parent factors
     asian_ec + black_ec + another_ec + latinx_ec + multiracial_ec + iss + 
     x1ses + female + # ses/demographics
     math_level1_num + math_score + # prior achievement
@@ -212,8 +210,47 @@ olr_imp %>% tbl_regression(exp = TRUE)   %>%
   add_significance_stars(hide_p = TRUE, hide_se = FALSE, hide_ci = FALSE) %>% 
   as_flex_table()
 
+end_time <- Sys.time()
+end_time - start_time
+
 pool(olr_imp)$pooled
 ```
+
+```{r}
+library(ordinal)
+library(mice)
+library(future)
+library(furrr)
+
+plan(multisession, workers = 8)
+
+# extract completed datasets
+imp_list <- lapply(
+  1:df_imp$m,
+  function(i) complete(df_imp, i)
+)
+
+start_time <- Sys.time()
+
+olr_imp <- future_map(
+  imp_list,
+  ~ clm(
+    highest_math_ord ~
+      phae_z + psd_z + par_sch_inv_z +
+      asian_ec + black_ec + another_ec +
+      latinx_ec + multiracial_ec + iss +
+      x1ses + female +
+      math_level1_num + math_score +
+      urban + public,
+    data = .x
+  ),
+  .options = furrr_options(seed = TRUE)
+)
+
+end_time <- Sys.time()
+end_time - start_time
+```
+
 
 
 ## Weighted
