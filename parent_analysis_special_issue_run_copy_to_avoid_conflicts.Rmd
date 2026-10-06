@@ -179,7 +179,7 @@ df_imp$data$black_par_ec <- ifelse(df_imp$data$par_race == "Black", 1,
 df_imp$data$latinx_par_ec <- ifelse(df_imp$data$par_race == "Latinx", 1,
                          ifelse(df_imp$data$par_race == "White", -1, 0))
 
-df_imp$data$multiracial_par_ec <- ifelse(df_imp$data$par_race == "Multiple", 1,
+df_imp$data$multi_par_ec <- ifelse(df_imp$data$par_race == "Multiple", 1,
                               ifelse(df_imp$data$par_race == "White", -1, 0))
 
 df_imp$data$another_par_ec <- ifelse(df_imp$data$par_race == "Indigenous", 1,
@@ -199,7 +199,7 @@ olr_imp <- with(
   clm(
     highest_math_ord ~
     phae_z + psd_z + par_sch_inv_z + # parent factors
-    asian_ec + black_ec + another_ec + latinx_ec + multiracial_ec + iss + 
+    asian_par_ec + black_par_ec + another_par_ec + latinx_par_ec + multi_par_ec + iss +
     x1ses + female + # ses/demographics
     math_level1_num + math_score + # prior achievement
     urban + public)) 
@@ -216,40 +216,6 @@ end_time - start_time
 pool(olr_imp)$pooled
 ```
 
-```{r}
-library(ordinal)
-library(mice)
-library(future)
-library(furrr)
-
-plan(multisession, workers = 8)
-
-# extract completed datasets
-imp_list <- lapply(
-  1:df_imp$m,
-  function(i) complete(df_imp, i)
-)
-
-start_time <- Sys.time()
-
-olr_imp <- future_map(
-  imp_list,
-  ~ clm(
-    highest_math_ord ~
-      phae_z + psd_z + par_sch_inv_z +
-      asian_ec + black_ec + another_ec +
-      latinx_ec + multiracial_ec + iss +
-      x1ses + female +
-      math_level1_num + math_score +
-      urban + public,
-    data = .x
-  ),
-  .options = furrr_options(seed = TRUE)
-)
-
-end_time <- Sys.time()
-end_time - start_time
-```
 
 
 
@@ -286,19 +252,23 @@ make_mi_table <- function(model) {
 ### Ordinal Regression
 ```{r}
 library(flextable)
+
 start_time <- Sys.time()
+
 # run ordinal regression
 olr_imp_svy <- with(
   df_brr_imp, 
   svyolr(
     highest_math_ord ~
-      psd_z + phbae_z + par_sch_inv_z + # parent factors
-      asian_ec + black_ec + another_ec + latinx_ec + multiracial_ec + iss +
+      phae_z + psd_z + par_sch_inv_z + # parent factors
+      asian_par_ec + black_par_ec + another_par_ec + latinx_par_ec + multi_par_ec + iss +
       x1ses + female + # ses/demographics
       math_level1_num + math_score + # prior achievement
       urban + public)) # school level
+
 end_time <- Sys.time()
 end_time - start_time
+
 # get table
 olr_imp_svy_tbl <- make_mi_table(olr_imp_svy)
 write_csv(olr_imp_svy_tbl, "brr_results.csv")
