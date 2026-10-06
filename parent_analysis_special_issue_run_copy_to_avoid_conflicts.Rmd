@@ -18,6 +18,7 @@ library(jtools)
 library(psych)
 library(EFAtools)
 library(lavaan)
+library(flextable)
 library(ordinal)
 df_subset <- haven::read_dta("data/hsls_subset.dta") # can use numeric values
 df_analysis <- df_subset %>% haven::as_factor() #make it factors
@@ -190,8 +191,6 @@ df_imp$data$another_par_ec <- ifelse(df_imp$data$par_race == "Indigenous", 1,
 
 ### Ordinal Regression
 ```{r}
-# load library for ordinal regression
-library(ordinal)
 start_time <- Sys.time()
 # run ordinal regression
 olr_imp <- with(
@@ -205,10 +204,13 @@ olr_imp <- with(
     urban + public)) 
 
 # get table
-olr_imp %>% tbl_regression(exp = TRUE)   %>% 
+olr_imp_apa <- olr_imp %>% tbl_regression(exp = TRUE)   %>% 
   add_glance_source_note() %>% 
-  add_significance_stars(hide_p = TRUE, hide_se = FALSE, hide_ci = FALSE) %>% 
-  as_flex_table()
+  add_significance_stars(hide_p = TRUE, hide_se = FALSE, hide_ci = FALSE) 
+
+olr_imp_apa %>% as_flex_table()
+
+olr_imp_apa %>% gt::gtsave(filename = "UNweighted Imputed Ordinal Regression.docx")
 
 end_time <- Sys.time()
 end_time - start_time
@@ -276,8 +278,7 @@ make_mi_table <- function(model) {
 ```
 
 ### Ordinal Regression Model
-```{r eval = FALSE}
-library(flextable)
+```{r, eval = FALSE}
 
 start_time <- Sys.time()
 
@@ -306,8 +307,7 @@ load("data/olr_imp_svy.rdata")
 # get table
 olr_imp_svy_tbl <- make_mi_table(olr_imp_svy)
 write_csv(olr_imp_svy_tbl, "data/brr_olr_results.csv")
-save(olr_imp_svy, "data/olr_imp_svy.rdata")
-olr_imp_svy_tbl %>% dplyr::select(variable, or, se, ll, ul, p.value) %>% 
+olr_imp_svy_tbl_apa <- olr_imp_svy_tbl %>% dplyr::select(variable, or, se, ll, ul, p.value) %>% 
   mutate(
     SE = round(se, 2),
     LL = round(ll, 2),
@@ -319,14 +319,15 @@ olr_imp_svy_tbl %>% dplyr::select(variable, or, se, ll, ul, p.value) %>%
       TRUE ~ ""),
     or_round = round(or, 2),
     OR = paste0(formatC(or_round, format = "f", digits = 2), stars)
-    ) %>% dplyr::select(variable, OR, SE, LL, UL) %>% 
+    ) %>% dplyr::select(variable, or, OR, SE, LL, UL) %>% 
   flextable() 
+save_as_docx(olr_imp_svy_tbl_apa, 
+             path = "Weighted Imputed Ordinal Regression.docx")
 
 ```
 
 ### Binary Regression Model
-```{r eval = FALSE}
-library(flextable)
+```{r, eval = FALSE}
 
 start_time <- Sys.time()
 
@@ -374,3 +375,9 @@ glm_imp_svy_tbl %>% dplyr::select(variable, or, se, ll, ul, p.value) %>%
   flextable() 
 
 ```
+
+# Forest Plot
+```{r}
+
+```
+
