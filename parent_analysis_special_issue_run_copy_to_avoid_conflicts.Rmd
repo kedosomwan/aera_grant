@@ -211,6 +211,9 @@ df_imp$data$par_sch_inv_z <- scale(df_imp$data$par_sch_inv)
 df_imp$data$phae_z <- scale(df_imp$data$phae)
 df_imp$data$psd_z <- scale(df_imp$data$psd)
 
+# make highest math ordered
+df_imp$data$highest_math_ord <- ordered(df_imp$data$highest_math)
+
 # make math level numeric
 df_imp$data$math_level1_num <- as.numeric(df_imp$data$math_level1)
 
@@ -240,14 +243,15 @@ df_imp$data$another_par_ec <- ifelse(df_imp$data$par_race == "Indigenous", 1,
 library(ordinal)
 
 # run ordinal regression
-olr_imp <- with(df_imp, clm(
- ordered(highest_math) ~
-    psd_scale + phbae_scale + I(scale(par_sch_inv)) + # parent factors
-    asian_ec + black_ec + another_ec + latinx_ec + multiracial_ec + 
-   x1ses + female + # ses/demographics
-    as.numeric(math_level1) + math_score + # prior achievement
-    # x1mthid + x1mtheff + x1mthint + x1mthuti + # affect
-    iss + urban + public)) # school level
+olr_imp <- with(
+  df_imp, 
+  clm(
+    highest_math_ord ~
+    phae_z + psd_z par_sch_inv_z + # parent factors
+    asian_ec + black_ec + another_ec + latinx_ec + multiracial_ec + iss + 
+    x1ses + female + # ses/demographics
+    math_level1_num + math_score + # prior achievement
+    urban + public)) 
 
 # get table
 olr_imp %>% tbl_regression(exp = TRUE)   %>% 
@@ -294,13 +298,15 @@ make_mi_table <- function(model) {
 library(flextable)
 start_time <- Sys.time()
 # run ordinal regression
-olr_imp_svy <- with(df_brr_imp, svyolr(
- ordered(highest_math) ~
-    psd_scale + phbae_scale + I(scale(par_sch_inv)) + # parent factors
-        asian_ec + black_ec + another_ec + latinx_ec + multiracial_ec + 
-   x1ses + female + # ses/demographics
-    as.numeric(math_level1) + math_score + # prior achievement
-    iss + urban + public)) # school level
+olr_imp_svy <- with(
+  df_brr_imp, 
+  svyolr(
+    highest_math_ord ~
+      psd_z + phbae_z + par_sch_inv_z + # parent factors
+      asian_ec + black_ec + another_ec + latinx_ec + multiracial_ec + iss +
+      x1ses + female + # ses/demographics
+      math_level1_num + math_score + # prior achievement
+      urban + public)) # school level
 end_time <- Sys.time()
 end_time - start_time
 # get table
