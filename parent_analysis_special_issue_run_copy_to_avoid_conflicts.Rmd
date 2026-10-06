@@ -206,6 +206,15 @@ load("df_imp.rdata")
 ### Prep
 ```{r}
 
+# standardize scales
+df_imp$data$par_sch_inv_z <- scale(df_imp$data$par_sch_inv)
+df_imp$data$phae_z <- scale(df_imp$data$phae)
+df_imp$data$psd_z <- scale(df_imp$data$psd)
+
+# make math level numeric
+df_imp$data$math_level1_num <- as.numeric(df_imp$data$math_level1)
+
+
 df_imp$data$asian_ec <- ifelse(df_imp$data$x1race == 2, 1,
                         ifelse(df_imp$data$x1race == 8, -1, 0))
 
