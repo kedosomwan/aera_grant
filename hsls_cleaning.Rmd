@@ -474,7 +474,7 @@ df_imp_prep <- hsls %>% haven::as_factor() %>%  dplyr::select(
   stu_id,
   starts_with("w3hstrans"), psd, phbae, par_sch_inv, par_race, x3thimath,
   x1ses, female, math_level1, highest_math,
-  asian_ec, black_ec, another_ec, latinx_ec, multi_ec,
+  asian_ec, black_ec, another_ec, latinx_ec, multi_ec, first_lang,
   iss, math_score, early_algebra, urban, public)
 
 colSums(is.na(df_imp_prep))
