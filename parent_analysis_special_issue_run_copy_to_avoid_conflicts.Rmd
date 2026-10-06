@@ -247,8 +247,7 @@ save(olr_imp, file = "data/olr_imp.rdata")
 ```
 
 ### Binary Regression
-```{r}
-
+```{r, eval = FALSE}
 start_time <- Sys.time()
 # run ordinal regression
 glm_imp <- with(
@@ -307,7 +306,7 @@ make_mi_table <- function(model) {
 ```
 
 ### Ordinal Regression Model
-```{r, eval = FALSE}
+```{r}
 
 start_time <- Sys.time()
 
@@ -319,7 +318,7 @@ olr_imp_svy <- with(
       phae_z + psd_z + par_sch_inv_z + # parent factors
       asian_par_ec + black_par_ec + another_par_ec + latinx_par_ec + multi_par_ec + iss +
       x1ses + female + # ses/demographics
-      math_level1_num + math_score + # prior achievement
+      math_level1_num + math_score_z + # prior achievement
       urban + public)) # school level
 
 # save model as rdata file
