@@ -272,7 +272,7 @@ hsls <- hsls %>%
       )
     ),
  # student race effect coding
-    asian_ec = case_when(
+  asian_ec = case_when(
   is.na(x1race) ~ NA_real_,
   x1race == 2 ~ 1,
   x1race == 8 ~ -1,
@@ -470,11 +470,11 @@ write_dta(hsls, "data/hsls_subset.dta")
 
 ## check missing
 ```{r}
-df_imp_prep <- hsls %>% as_factor() %>% dplyr::select(
+df_imp_prep <- hsls %>% dplyr::select(
   stu_id,
   starts_with("w3hstrans"), psd, phbae, par_sch_inv, par_race, x3thimath,
   stud_race, x1ses, female, math_level1, highest_math, advanced_mathematics, 
-  asian_ec + black_ec + another_ec + latinx_ec + multiracial_ec +
+  asian_ec, black_ec, another_ec, latinx_ec, multi_ec,
   iss, math_score, early_algebra,urban, public)
 
 colSums(is.na(df_imp_prep))
@@ -482,12 +482,6 @@ colSums(is.na(df_imp_prep))
 
 ## Dry run
 ```{r}
-# make binaries into factor for logreg imputations
-df_imp_prep <- df_imp_prep %>% mutate(
-  early_algebra = factor(early_algebra),
-  iss = factor(iss)
-)
-
 meth <- mice::mice(df_imp_prep, maxit = 0, m = 1)
 meth$method
 ```
