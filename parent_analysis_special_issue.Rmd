@@ -16,8 +16,6 @@ library(tidyverse)
 library(gtsummary)
 library(jtools)
 library(psych)
-library(EFAtools)
-library(lavaan)
 library(flextable)
 library(ordinal)
 df_subset <- haven::read_dta("data/hsls_subset.dta") # can use numeric values
