@@ -216,6 +216,32 @@ end_time - start_time
 save(olr_imp, file = "data/olr_imp.rdata")
 ```
 
+### Binary Regression
+```{r}
+
+start_time <- Sys.time()
+# run ordinal regression
+glm_imp <- with(
+  df_imp, 
+  glm(
+    advanced_mathematics ~
+    phae_z + psd_z + par_sch_inv_z + # parent factors
+    asian_par_ec + black_par_ec + another_par_ec + latinx_par_ec + multi_par_ec + iss +
+    x1ses + female + # ses/demographics
+    math_level1_num + math_score + # prior achievement
+    urban + public)) 
+
+# get table
+glm_imp %>% tbl_regression(exp = TRUE)   %>% 
+  add_glance_source_note() %>% 
+  add_significance_stars(hide_p = TRUE, hide_se = FALSE, hide_ci = FALSE) %>% 
+  as_flex_table()
+
+end_time <- Sys.time()
+end_time - start_time
+
+save(glm_imp, file = "data/glm_imp.rdata")
+```
 
 
 
@@ -249,7 +275,7 @@ make_mi_table <- function(model) {
 }
 ```
 
-### Ordinal Regression
+### Ordinal Regression Model
 ```{r eval = FALSE}
 library(flextable)
 
@@ -274,7 +300,7 @@ end_time <- Sys.time()
 end_time - start_time
 ```
 
-
+### Ordinal Regression Tables
 ```{r}
 load("data/olr_imp_svy.rdata")
 # get table
@@ -298,7 +324,7 @@ olr_imp_svy_tbl %>% dplyr::select(variable, or, se, ll, ul, p.value) %>%
 
 ```
 
-### Ordinal Regression
+### Binary Regression Model
 ```{r eval = FALSE}
 library(flextable)
 
@@ -323,7 +349,7 @@ end_time - start_time
 save(glm_imp_svy, file =  "data/glm_imp_svy.rdata")
 ```
 
-
+### Binary Regression  Tables
 ```{r}
 # load model
 load("data/glm_imp_svy.rdata")
