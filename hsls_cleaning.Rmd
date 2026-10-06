@@ -494,6 +494,7 @@ meth$method
 ```{r}
 start_time <- Sys.time()
 
+# took around 11 minutes with this method  
 df_imp <- futuremice(
   df_imp_prep, 
   m = 20, 
