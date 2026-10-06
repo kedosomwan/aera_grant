@@ -161,6 +161,7 @@ load("data/df_imp.rdata")
 # standardize scales
 df_imp$data$par_sch_inv_z <- scale(df_imp$data$par_sch_inv)
 df_imp$data$phae_z <- scale(df_imp$data$phbae)
+df_imp$data$math_score_z <- scale(df_imp$data$math_score)
 df_imp$data$psd_z <- scale(df_imp$data$psd)
 
 # make highest math ordered
@@ -191,6 +192,7 @@ df_imp$data$another_par_ec <- ifelse(df_imp$data$par_race == "Indigenous", 1,
 
 ### Ordinal Regression
 ```{r}
+library(ordinal)
 start_time <- Sys.time()
 # run ordinal regression
 olr_imp <- with(
@@ -198,19 +200,45 @@ olr_imp <- with(
   clm(
     highest_math_ord ~
     phae_z + psd_z + par_sch_inv_z + # parent factors
-    asian_par_ec + black_par_ec + another_par_ec + latinx_par_ec + multi_par_ec + iss +
+    asian_ec + black_ec + another_ec + latinx_ec + multi_ec + iss +
     x1ses + female + # ses/demographics
-    math_level1_num + math_score + # prior achievement
+    math_level1_num + math_score_z + # prior achievement
     urban + public)) 
 
+olr_imp_tbl <- summary(pool(olr_imp))
+
+olr_imp_tbl <- olr_imp_tbl %>% mutate(
+  Model = "unweighted",
+  Variable = term,
+  or = exp(estimate), # exponentiate estimate for ORs
+  ll = exp((estimate - 1.96*std.error)), # exponentiate ll
+  ul = exp((estimate + 1.96*std.error))) # exponentiate ul
+
+write_csv(olr_imp_tbl, "tables/unweighted.csv")
+
+olr_imp_tbl_apa <- olr_imp_tbl %>% mutate(
+  LL = round(ll, 2),
+  UL = round(ul, 2),
+  SE = round(std.error, 2),
+  stars = case_when(
+      p.value < 0.001 ~ "***",
+      p.value < 0.01  ~ "**",
+      p.value < 0.05  ~ "*",
+      TRUE ~ ""),
+  or_round = round(or, 2),
+  OR = paste0(formatC(or_round, format = "f", digits = 2), stars)) %>% 
+  dplyr::select(Model, Variable, OR, SE, LL, UL) %>% 
+  flextable() 
+
+save_as_docx(olr_imp_tbl_apa, 
+             path = "tables/Unweighted.docx")
 # get table
 olr_imp_apa <- olr_imp %>% tbl_regression(exp = TRUE)   %>% 
   add_glance_source_note() %>% 
   add_significance_stars(hide_p = TRUE, hide_se = FALSE, hide_ci = FALSE) 
 
-olr_imp_apa %>% as_flex_table()
-
-olr_imp_apa %>% gt::gtsave(filename = "UNweighted Imputed Ordinal Regression.docx")
+olr_imp_apa %>% as_flex_table() %>% 
+  save_as_docx(path = "tables/UNweighted Imputed Ordinal Regression.docx")
 
 end_time <- Sys.time()
 end_time - start_time
@@ -228,9 +256,10 @@ glm_imp <- with(
   glm(
     advanced_mathematics ~
     phae_z + psd_z + par_sch_inv_z + # parent factors
-    asian_par_ec + black_par_ec + another_par_ec + latinx_par_ec + multi_par_ec + iss +
+    #asian_par_ec + black_par_ec + another_par_ec + latinx_par_ec + multi_par_ec + iss +
+       #asian_par_ec + black_par_ec + another_par_ec + latinx_par_ec + multi_par_ec + iss +
     x1ses + female + # ses/demographics
-    math_level1_num + math_score + # prior achievement
+    math_level1_num + math_score_z + # prior achievement
     urban + public)) 
 
 # get table
@@ -305,24 +334,33 @@ end_time - start_time
 ```{r}
 load("data/olr_imp_svy.rdata")
 # get table
-olr_imp_svy_tbl <- make_mi_table(olr_imp_svy)
-write_csv(olr_imp_svy_tbl, "data/brr_olr_results.csv")
-olr_imp_svy_tbl_apa <- olr_imp_svy_tbl %>% dplyr::select(variable, or, se, ll, ul, p.value) %>% 
-  mutate(
-    SE = round(se, 2),
-    LL = round(ll, 2),
-    UL = round(ul, 2),
-    stars = case_when(
+olr_imp_svy_tbl <- summary(pool(olr_imp_svy))
+
+olr_imp_svy_tbl <- olr_imp_svy_tbl %>% mutate(
+  Model = "weighted",
+  Variable = term,
+  or = exp(estimate), # exponentiate estimate for ORs
+  ll = exp((estimate - 1.96*std.error)), # exponentiate ll
+  ul = exp((estimate + 1.96*std.error))) # exponentiate ul
+
+write_csv(olr_imp_svy_tbl, "tables/weighted.csv")
+
+olr_imp_svy_tbl_apa <- olr_imp_svy_tbl %>% mutate(
+  LL = round(ll, 2),
+  UL = round(ul, 2),
+  SE = round(std.error, 2),
+  stars = case_when(
       p.value < 0.001 ~ "***",
       p.value < 0.01  ~ "**",
       p.value < 0.05  ~ "*",
       TRUE ~ ""),
-    or_round = round(or, 2),
-    OR = paste0(formatC(or_round, format = "f", digits = 2), stars)
-    ) %>% dplyr::select(variable, or, OR, SE, LL, UL) %>% 
+  or_round = round(or, 2),
+  OR = paste0(formatC(or_round, format = "f", digits = 2), stars)) %>% 
+  dplyr::select(Model, Variable, OR, SE, LL, UL) %>% 
   flextable() 
+
 save_as_docx(olr_imp_svy_tbl_apa, 
-             path = "Weighted Imputed Ordinal Regression.docx")
+             path = "tables/Weighted.docx")
 
 ```
 
@@ -376,8 +414,8 @@ glm_imp_svy_tbl %>% dplyr::select(variable, or, se, ll, ul, p.value) %>%
 
 ```
 
-# Forest Plot
+# Forest Plots
 ```{r}
-
+# remember to save in figures folder!
 ```
 
