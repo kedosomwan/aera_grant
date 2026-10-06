@@ -107,7 +107,7 @@ hsls_subset <- labelled::drop_unused_value_labels(hsls_subset)
 ## Filter 
 ```{r}
 # drop nonresponses based on having unit non-response for highest math class in 8th grade, which we are using as our first time point, and highest math class in spring 2012, and higest math credit. also those not taking math 9th grade
-hsls <- hsls_subset %>% dplyr::filter(!is.na(x3thimath9), !is.na(x1parresp))
+hsls <- hsls_subset %>% dplyr::filter(!is.na(x3thimath9), !is.na(x1parresp), !is.na(x1race))
 ```
 
 ## Math coursework
@@ -471,8 +471,7 @@ write_dta(hsls, "hsls_subset.dta")
 ## check missing
 ```{r}
 df_imp_prep <- hsls %>% as_factor() %>% dplyr::select(
-  starts_with("w3hstrans"), psd, phbae, par_sch_inv, 
-  ends_with("ec"), par_race, x3thimath,
+  starts_with("w3hstrans"), psd, phbae, par_sch_inv, par_race, x3thimath,
   stud_race, x1ses, female, math_level1, highest_math, advanced_mathematics, 
   iss, math_score, early_algebra,urban, public)
 
@@ -481,33 +480,32 @@ colSums(is.na(df_imp_prep))
 
 ## Dry run
 ```{r}
+# make binaries into factor for logreg imputations
+df_imp_prep <- df_imp_prep %>% mutate(
+  early_algebra = factor(early_algebra),
+  iss = factor(iss)
+)
+
 meth <- mice::mice(df_imp_prep, maxit = 0, m = 1)
 meth$method
 ```
 
 ## Impute!
 ```{r}
-library(mice)
-library(future)
-
-
 start_time <- Sys.time()
 
 df_imp <- futuremice(
-  df_imp_prep,
-  m = 20,
-  #nnet.MaxNWts = 3000,
-  n.core = 8,
-  future.plan = "multisession",
-  parallelseed = 1234
-)
+  df_imp_prep, 
+  m = 20, 
+  n.core = 12,
+  future.plan = "multisession"
+  )
 
 end_time <- Sys.time()
 end_time - start_time
 
+# save imputed data
 save(df_imp, file = "df_imp.rdata")
-
-
 ```
 
 
