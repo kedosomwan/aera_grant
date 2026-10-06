@@ -20,8 +20,6 @@ library(flextable)
 library(ordinal)
 df_subset <- haven::read_dta("data/hsls_subset.dta") # can use numeric values
 df_analysis <- df_subset %>% 
-  mutate(ell = ifelse(p1ellever == 1, 1, 0),
-         native_english = ifelse(x1duallang == 1, 1, 0)) %>% 
   haven::as_factor() #make it factors
 ```
 
@@ -115,6 +113,8 @@ svy_olr %>%
 ```{r}
 library(mitools)
 library(mice)
+library(survey)
+library(gtsummary)
 load("data/df_imp.rdata")
 ```
 
