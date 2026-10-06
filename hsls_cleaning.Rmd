@@ -447,15 +447,15 @@ hsls <- hsls %>%
   mutate(
     # na.rm = TRUE means it will calculate based on available values
     psd = rowMeans(
-      select(., s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)),
+      select(., s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks), na.rm = TRUE),
     phbae = rowMeans(
-      select(., p1eduexpect, p1eduaspire, able_ba1)),
+      select(., p1eduexpect, p1eduaspire, able_ba1), na.rm = TRUE),
     home = rowMeans(
       dplyr::select(.,p1eduexpect, p1eduaspire, able_ba1, 
-                    s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)),
+                    s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks), na.rm = TRUE),
     school = rowSums(
       dplyr::select(., p1schevent, p1volunteer, p1fundraise, 
-                    p1ptconfer, p1ptomtg, p1schmtg))
+                    p1ptconfer, p1ptomtg, p1schmtg), na.rm = TRUE)
   )
 
 ```
@@ -473,9 +473,9 @@ write_dta(hsls, "data/hsls_subset.dta")
 df_imp_prep <- hsls %>% haven::as_factor() %>%  dplyr::select(
   stu_id,
   starts_with("w3hstrans"), psd, phbae, par_sch_inv, par_race, x3thimath,
-  stud_race, x1ses, female, math_level1, highest_math, advanced_mathematics, 
+  x1ses, female, math_level1, highest_math,
   asian_ec, black_ec, another_ec, latinx_ec, multi_ec,
-  iss, math_score, early_algebra,urban, public)
+  iss, math_score, early_algebra, urban, public)
 
 colSums(is.na(df_imp_prep))
 ```
@@ -493,7 +493,7 @@ start_time <- Sys.time()
 # took around 11 minutes with this method  
 df_imp <- futuremice(
   df_imp_prep, 
-  m = 20, 
+  m = 24, 
   n.core = 12,
   future.plan = "multisession"
   )
