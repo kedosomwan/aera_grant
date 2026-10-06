@@ -215,20 +215,21 @@ df_imp$data$psd_z <- scale(df_imp$data$psd)
 df_imp$data$math_level1_num <- as.numeric(df_imp$data$math_level1)
 
 
-df_imp$data$asian_ec <- ifelse(df_imp$data$x1race == 2, 1,
-                        ifelse(df_imp$data$x1race == 8, -1, 0))
+# Effect Code Parent Race
+df_imp$data$asian_par_ec <- ifelse(df_imp$data$par_race == "Asian", 1,
+                        ifelse(df_imp$data$par_race == "White", -1, 0))
 
-df_imp$data$black_ec <- ifelse(df_imp$data$x1race == 3, 1,
-                        ifelse(df_imp$data$x1race == 8, -1, 0))
+df_imp$data$black_par_ec <- ifelse(df_imp$data$par_race == "Black", 1,
+                        ifelse(df_imp$data$par_race == "White", -1, 0))
 
-df_imp$data$latinx_ec <- ifelse(df_imp$data$x1race %in% c(4, 5), 1,
-                         ifelse(df_imp$data$x1race == 8, -1, 0))
+df_imp$data$latinx_par_ec <- ifelse(df_imp$data$par_race == "Latinx", 1,
+                         ifelse(df_imp$data$par_race == "White", -1, 0))
 
-df_imp$data$multiracial_ec <- ifelse(df_imp$data$x1race == 6, 1,
-                              ifelse(df_imp$data$x1race == 8, -1, 0))
+df_imp$data$multiracial_par_ec <- ifelse(df_imp$data$par_race == "Multiple", 1,
+                              ifelse(df_imp$data$par_race == "White", -1, 0))
 
-df_imp$data$another_ec <- ifelse(df_imp$data$x1race %in% c(1, 7), 1,
-                          ifelse(df_imp$data$x1race == 8, -1, 0))
+df_imp$data$another_par_ec <- ifelse(df_imp$data$par_race == "Indigenous", 1,
+                          ifelse(df_imp$data$par_race == "White", -1, 0))
 
 
 ```
