@@ -24,11 +24,15 @@ library(broom)
 library(mice)
 library(mitools)
 library(sjPlot)
+library(parallel)
 ```
 
 ## Load Dataset
 ```{r}
+start_time <- Sys.time()
 hsls_raw <- read_dta("hsls_17_student_pets_sr_v1_0.dta")
+end_time <- Sys.time()
+end_time-start_time
 ```
 
 ## Subset Dataset Based on Grant Application and LowerCase
@@ -134,7 +138,7 @@ hsls <- hsls %>%
       x3thimath  %in% c(0,1,2,3,4,5) ~ 1,    # Geometry or Below
       x3thimath  %in% c(6) ~ 2,              # Algebra II
       x3thimath  %in% c(7,8,9,11) ~ 3,       # Advanced Math
-      x3thimath  %in% c(10, 12, 13) ~ 4,              # Calculus or AP/IB math
+      x3thimath  %in% c(10, 12, 13) ~ 4,    # Calculus or AP/IB math
     TRUE ~ NA_real_),
     
     adv_math1 = case_when(
@@ -267,7 +271,41 @@ hsls <- hsls %>%
         x1race == 8        ~ "White"
       )
     ),
+ # student race effect coding
+    asian_ec = case_when(
+  is.na(x1race) ~ NA_real_,
+  x1race == 2 ~ 1,
+  x1race == 8 ~ -1,
+  TRUE ~ 0
+),
 
+black_ec = case_when(
+  is.na(x1race) ~ NA_real_,
+  x1race == 3 ~ 1,
+  x1race == 8 ~ -1,
+  TRUE ~ 0
+),
+
+latinx_ec = case_when(
+  is.na(x1race) ~ NA_real_,
+  x1race %in% c(4, 5) ~ 1,
+  x1race == 8 ~ -1,
+  TRUE ~ 0
+),
+
+multi_ec = case_when(
+  is.na(x1race) ~ NA_real_,
+  x1race == 6 ~ 1,
+  x1race == 8 ~ -1,
+  TRUE ~ 0
+),
+
+another_ec = case_when(
+  is.na(x1race) ~ NA_real_,
+  x1race %in% c(1, 7) ~ 1,
+  x1race == 8 ~ -1,
+  TRUE ~ 0
+),
     # par_race: nominal categorical
     par_race = factor(
       case_when(
@@ -277,8 +315,43 @@ hsls <- hsls %>%
         x1par1race == 6        ~ "Multiple",
         x1par1race == 8        ~ "White",
         x1par1race == 9        ~ "Indigenous"
-      )
-    )
+      )),
+      
+  # par_race: effect coding
+par_asian_ec = case_when(
+  is.na(x1par1race) ~ NA_real_,
+  x1par1race == 2 ~ 1,
+  x1par1race == 8 ~ -1,
+  TRUE ~ 0
+),
+
+par_black_ec = case_when(
+  is.na(x1par1race) ~ NA_real_,
+  x1par1race == 3 ~ 1,
+  x1par1race == 8 ~ -1,
+  TRUE ~ 0
+),
+
+par_latinx_ec = case_when(
+  is.na(x1par1race) ~ NA_real_,
+  x1par1race %in% c(4, 5) ~ 1,
+  x1par1race == 8 ~ -1,
+  TRUE ~ 0
+),
+
+par_multi_ec = case_when(
+  is.na(x1par1race) ~ NA_real_,
+  x1par1race == 6 ~ 1,
+  x1par1race == 8 ~ -1,
+  TRUE ~ 0
+),
+
+par_another_ec = case_when(
+  is.na(x1par1race) ~ NA_real_,
+  x1par1race == 9 ~ 1,
+  x1par1race == 8 ~ -1,
+  TRUE ~ 0
+)
   )
 ```
 
@@ -373,10 +446,16 @@ hsls <- hsls %>%
 hsls <- hsls %>%
   mutate(
     # na.rm = TRUE means it will calculate based on available values
-    psd = rowMeans(select(., s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks), na.rm = TRUE),
-    psd_scale = as.numeric(scale(psd)),
-    phbae = rowMeans(select(., p1eduexpect, p1eduaspire, able_ba1), na.rm = TRUE),
-    phbae_scale = as.numeric(scale(phbae))
+    psd = rowMeans(
+      select(., s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)),
+    phbae = rowMeans(
+      select(., p1eduexpect, p1eduaspire, able_ba1)),
+    home = rowMeans(
+      dplyr::select(.,p1eduexpect, p1eduaspire, able_ba1, 
+                    s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)),
+    school = rowSums(
+      dplyr::select(., p1schevent, p1volunteer, p1fundraise, 
+                    p1ptconfer, p1ptomtg, p1schmtg))
   )
 
 ```
@@ -384,76 +463,18 @@ hsls <- hsls %>%
 # Save Modified Data
 
 ```{r}
-################################################################################
-# Save Subset (WIDE)
-################################################################################
-
-write_dta(hsls, "hsls_subset_wide.dta")
+write_dta(hsls, "hsls_subset.dta")
 ```
-
-# Subset, reshape, save
-```{r}
-
-df <- hsls %>%
-  dplyr::select(
-    scale_math_id1, scale_math_id2,
-    advanced_mathematics, highest_math,
-    adv_math1, adv_math2,
-    math_level1, math_level2,
-    math_cred3, math_cred4,
-    scale_math_eff1, scale_math_eff2,
-    scale_math_uti1, scale_math_uti2,
-    scale_math_int1, scale_math_int2,
-    teach_treat_std1, teach_treat_std2,
-    math_treat1, math_easy1, math_interest1, 
-    math_treat2, math_easy2, math_interest2,
-    ses_quintile1, ses_quintile2,
-    ses1, ses2, x1race,
-    starts_with("math_teach"),
-    early_algebra, math_score, middle_math,
-    first_lang, stud_race, par_race, female, 
-    math_cred, math_cred_semester,
-    phbae_scale, phbae, psd_scale, psd,
-    s1dadtalks, s1momtalks, s1dadtalkm, s1momtalkm,
-    par_exp1, par_asp1, able_ba1,
-    par_sch_inv, iss,
-    urban, public,
-    stu_id, starts_with("w2w1s")
-  )
-
-
-df_long <- df %>%
-  pivot_longer(
-    cols = c(scale_math_id1, scale_math_id2,
-             scale_math_eff1, scale_math_eff2,
-             scale_math_uti1, scale_math_uti2,
-             scale_math_int1, scale_math_int2,
-             teach_treat_std1, teach_treat_std2,
-             math_treat1, math_easy1, math_interest1, 
-             math_treat2, math_easy2, math_interest2,
-             adv_math1, adv_math2, math_level1, math_level2,
-             ses_quintile1, ses_quintile2, ses1, ses2),
-    names_to = c(".value","time"),
-    names_pattern = "(.*)([12])"
-  ) %>%
-  mutate(
-    time = if_else(time == "1", 0, 1)
-  )
-
-write_dta(df_long, "hsls_subset_long.dta")
-```
-
-
 
 # Imputation
 
 ## check missing
 ```{r}
 df_imp_prep <- hsls %>% as_factor() %>% dplyr::select(
-  starts_with("w3hstrans"), psd_scale, phbae_scale, par_sch_inv, 
-  x1race, x1ses, female, math_level1, highest_math, advanced_mathematics, iss, 
-  math_score, early_algebra,
-  urban, public)
+  starts_with("w3hstrans"), psd, phbae, par_sch_inv, 
+  ends_with("ec"), par_race, x3thimath,
+  stud_race, x1ses, female, math_level1, highest_math, advanced_mathematics, 
+  iss, math_score, early_algebra,urban, public)
 
 colSums(is.na(df_imp_prep))
 ```
@@ -466,11 +487,24 @@ meth$method
 
 ## Impute!
 ```{r}
+library(mice)
+library(future)
+
+
 start_time <- Sys.time()
 
-df_imp <- mice(df_imp_prep, m = 20, nnet.MaxNWts = 3000)
+df_imp <- futuremice(
+  df_imp_prep,
+  m = 20,
+  #nnet.MaxNWts = 3000,
+  n.core = 8,
+  future.plan = "multisession",
+  parallelseed = 1234
+)
+
 end_time <- Sys.time()
 end_time - start_time
+
 save(df_imp, file = "df_imp.rdata")
 
 
