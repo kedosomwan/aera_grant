@@ -19,7 +19,10 @@ library(psych)
 library(flextable)
 library(ordinal)
 df_subset <- haven::read_dta("data/hsls_subset.dta") # can use numeric values
-df_analysis <- df_subset %>% haven::as_factor() #make it factors
+df_analysis <- df_subset %>% 
+  mutate(ell = ifelse(p1ellever == 1, 1, 0),
+         native_english = ifelse(x1duallang == 1, 1, 0)) %>% 
+  haven::as_factor() #make it factors
 ```
 
 # Reliability and Validity
@@ -49,11 +52,14 @@ olr <- clm(
   data = df_analysis,
   ordered(highest_math) ~
     I(scale(psd)) + I(scale(phbae)) + I(scale(par_sch_inv)) + # parent factors
-    first_lang +
+    x1duallang + latinx_ec*x1duallang +
     asian_ec + black_ec + another_ec + latinx_ec + multi_ec + iss +
     x1ses + female + # ses/demographics
     as.numeric(math_level1) + I(scale(math_score)) + # prior achievement
     urban + public) # school level
+
+# model fit
+performance::model_performance(olr)
 
   # get table
 olr %>% 
@@ -86,7 +92,7 @@ df_brr <- svrepdesign(
 svy_olr <- svyolr(design = df_brr,
  ordered(highest_math) ~
     I(scale(psd)) + I(scale(phbae)) + I(scale(par_sch_inv)) + # parent factors
-   first_lang +
+    x1duallang + latinx_ec*x1duallang + 
     asian_ec + black_ec + another_ec + latinx_ec + multi_ec + iss +
     x1ses + female + # ses/demographics
     as.numeric(math_level1) + I(scale(math_score)) + # prior achievement
@@ -97,6 +103,7 @@ svy_olr %>%
   tbl_regression(
     exp = TRUE) %>% 
   add_global_p() %>% 
+  add_glance_source_note() %>% 
   add_significance_stars(hide_p = TRUE, hide_se = FALSE, hide_ci = FALSE) %>% 
   as_flex_table()
 
@@ -120,8 +127,9 @@ df_imp$data$par_sch_inv_z <- scale(df_imp$data$par_sch_inv)
 df_imp$data$phae_z <- scale(df_imp$data$phbae)
 df_imp$data$math_score_z <- scale(df_imp$data$math_score)
 df_imp$data$psd_z <- scale(df_imp$data$psd)
+df_imp$data$ses_z <- scale(df_imp$data$x1ses)
 df_imp$data$native_english <- ifelse(df_imp$data$first_lang == 1, 1, 0)
-df_imp$data$ell <- ifelse(df_imp$data$p1everell == 1, 1, 0)
+df_imp$data$ell <- ifelse(df_imp$data$p1ellever == 1, 1, 0)
 
 # make highest math ordered
 df_imp$data$highest_math_ord <- ordered(df_imp$data$highest_math)
@@ -159,9 +167,9 @@ olr_imp <- with(
   clm(
     highest_math_ord ~
     phae_z + psd_z + par_sch_inv_z + # parent factors
-    first_lang + # language
     asian_ec + black_ec + another_ec + latinx_ec + multi_ec + iss +
-    x1ses + female + # ses/demographics
+    first_lang*latinx_ec + first_lang*asian_ec + # language 
+    ses_z + female + # ses/demographics
     math_level1_num + math_score_z + # prior achievement
     urban + public)) 
 
@@ -227,7 +235,6 @@ df_brr_imp <- svrepdesign(
 
 ### Ordinal Regression Model
 ```{r}
-
 start_time <- Sys.time()
 
 # run ordinal regression
@@ -236,9 +243,9 @@ olr_imp_svy <- with(
   svyolr(
     highest_math_ord ~
     phae_z + psd_z + par_sch_inv_z + # parent factors
-    first_lang + # language
     asian_ec + black_ec + another_ec + latinx_ec + multi_ec + iss +
-    x1ses + female + # ses/demographics
+    first_lang*latinx_ec + first_lang*asian_ec + # language 
+    ses_z + female + # ses/demographics
     math_level1_num + math_score_z + # prior achievement
     urban + public)) 
 
@@ -252,7 +259,8 @@ end_time - start_time
 
 ### Ordinal Regression Tables
 ```{r}
-load("data/olr_imp_svy.rdata")
+# code to  load model to avoid having to waight for it to rerun
+# load("data/olr_imp_svy.rdata")
 # get table
 olr_imp_svy_tbl <- summary(pool(olr_imp_svy))
 
