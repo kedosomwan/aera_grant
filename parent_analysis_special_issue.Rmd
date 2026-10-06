@@ -21,6 +21,7 @@ library(ordinal)
 df_subset <- haven::read_dta("data/hsls_subset.dta") # can use numeric values
 df_analysis <- df_subset %>% haven::as_factor() #make it factors
 ```
+
 # Reliability and Validity
 
 ## Subset Parent Questions for pa Year
@@ -48,7 +49,7 @@ olr <- clm(
   data = df_analysis,
   ordered(highest_math) ~
     I(scale(psd)) + I(scale(phbae)) + I(scale(par_sch_inv)) + # parent factors
-    first_lang() +
+    first_lang +
     asian_ec + black_ec + another_ec + latinx_ec + multi_ec + iss +
     x1ses + female + # ses/demographics
     as.numeric(math_level1) + I(scale(math_score)) + # prior achievement
@@ -63,31 +64,6 @@ olr %>%
   as_flex_table()
 ```
 
-
-
-## Logistic Regression
-```{r}
-glm <- glm(
-  advanced_mathematics ~ 
-    I(scale(psd)) + I(scale(phbae)) + I(scale(par_sch_inv)) + # parent factors
-    first_lang +
-    asian_ec + black_ec + another_ec + latinx_ec + multi_ec + iss +
-    x1ses + female + # ses/demographics
-    as.numeric(math_level1) + I(scale(math_score)) + # prior achievement
-    urban + public, # school level
-  data = df_analysis,
-  family = binomial)
-
-glm %>% 
-  tbl_regression(
-    exp = TRUE) %>% 
-  add_glance_table(
-    glance_fun = performance::model_performance,
-    include = c(R2_Tjur, AIC, RMSE)) %>% 
-  add_significance_stars(hide_p = TRUE, hide_se = FALSE, hide_ci = FALSE) %>% 
-  as_flex_table()
-
-```
 # Weighted Ordinal Regression
 
 ## Weight Model
@@ -144,6 +120,8 @@ df_imp$data$par_sch_inv_z <- scale(df_imp$data$par_sch_inv)
 df_imp$data$phae_z <- scale(df_imp$data$phbae)
 df_imp$data$math_score_z <- scale(df_imp$data$math_score)
 df_imp$data$psd_z <- scale(df_imp$data$psd)
+df_imp$data$native_english <- ifelse(df_imp$data$first_lang == 1, 1, 0)
+df_imp$data$ell <- ifelse(df_imp$data$p1everell == 1, 1, 0)
 
 # make highest math ordered
 df_imp$data$highest_math_ord <- ordered(df_imp$data$highest_math)
