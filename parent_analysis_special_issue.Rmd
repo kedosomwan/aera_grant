@@ -48,9 +48,10 @@ olr <- clm(
   data = df_analysis,
   ordered(highest_math) ~
     I(scale(psd)) + I(scale(phbae)) + I(scale(par_sch_inv)) + # parent factors
+    first_lang() +
     asian_ec + black_ec + another_ec + latinx_ec + multi_ec + iss +
     x1ses + female + # ses/demographics
-    as.numeric(math_level1) + math_score + # prior achievement
+    as.numeric(math_level1) + I(scale(math_score)) + # prior achievement
     urban + public) # school level
 
   # get table
@@ -69,9 +70,10 @@ olr %>%
 glm <- glm(
   advanced_mathematics ~ 
     I(scale(psd)) + I(scale(phbae)) + I(scale(par_sch_inv)) + # parent factors
+    first_lang +
     asian_ec + black_ec + another_ec + latinx_ec + multi_ec + iss +
     x1ses + female + # ses/demographics
-    as.numeric(math_level1) + math_score + # prior achievement
+    as.numeric(math_level1) + I(scale(math_score)) + # prior achievement
     urban + public, # school level
   data = df_analysis,
   family = binomial)
@@ -108,9 +110,10 @@ df_brr <- svrepdesign(
 svy_olr <- svyolr(design = df_brr,
  ordered(highest_math) ~
     I(scale(psd)) + I(scale(phbae)) + I(scale(par_sch_inv)) + # parent factors
+   first_lang +
     asian_ec + black_ec + another_ec + latinx_ec + multi_ec + iss +
     x1ses + female + # ses/demographics
-    as.numeric(math_level1) + math_score + # prior achievement
+    as.numeric(math_level1) + I(scale(math_score)) + # prior achievement
     urban + public)
 
 # get table
@@ -124,26 +127,6 @@ svy_olr %>%
 
 ```
 
-
-
-## Logistic Regression
-```{r}
-svy_glm <- svyglm(
-  design = df_brr,
-  advanced_mathematics ~ 
-    I(scale(psd)) + I(scale(phbae)) + I(scale(par_sch_inv)) + # parent factors
-    asian_ec + black_ec + another_ec + latinx_ec + multi_ec + iss +
-    x1ses + female + # ses/demographics
-    as.numeric(math_level1) + math_score + # prior achievement
-    urban + public, # school level
-  family = quasibinomial)
-
-svy_glm %>% tbl_regression(exp = TRUE) %>% 
-  add_global_p() %>% 
-  add_significance_stars(hide_p = TRUE, hide_se = FALSE, hide_ci = FALSE) %>% 
-  as_flex_table()
-
-```
 
 # Imputed Data
 ```{r}
@@ -198,6 +181,7 @@ olr_imp <- with(
   clm(
     highest_math_ord ~
     phae_z + psd_z + par_sch_inv_z + # parent factors
+    first_lang + # language
     asian_ec + black_ec + another_ec + latinx_ec + multi_ec + iss +
     x1ses + female + # ses/demographics
     math_level1_num + math_score_z + # prior achievement
@@ -244,35 +228,6 @@ end_time - start_time
 save(olr_imp, file = "data/olr_imp.rdata")
 ```
 
-### Binary Regression
-```{r, eval = FALSE}
-start_time <- Sys.time()
-# run ordinal regression
-glm_imp <- with(
-  df_imp, 
-  glm(
-    advanced_mathematics ~
-    phae_z + psd_z + par_sch_inv_z + # parent factors
-    #asian_par_ec + black_par_ec + another_par_ec + latinx_par_ec + multi_par_ec + iss +
-       #asian_par_ec + black_par_ec + another_par_ec + latinx_par_ec + multi_par_ec + iss +
-    x1ses + female + # ses/demographics
-    math_level1_num + math_score_z + # prior achievement
-    urban + public)) 
-
-# get table
-glm_imp %>% tbl_regression(exp = TRUE)   %>% 
-  add_glance_source_note() %>% 
-  add_significance_stars(hide_p = TRUE, hide_se = FALSE, hide_ci = FALSE) %>% 
-  as_flex_table()
-
-end_time <- Sys.time()
-end_time - start_time
-
-save(glm_imp, file = "data/glm_imp.rdata")
-```
-
-
-
 ## Weighted
 ### BRR Weight Data Imputed
 ```{r}
@@ -290,17 +245,6 @@ df_brr_imp <- svrepdesign(
   combined.weights = TRUE
 )
 
-# function to exponentiate results and create dataframe with or, se, ll, ul, & p-value
-make_mi_table <- function(model) {
-  as.data.frame(summary(MIcombine(model))) %>%  # make dataframe of pooled model
-  tibble::rownames_to_column("variable") %>% # make variable column
-  mutate(
-    or = exp(results), # exponentiate estimate for ORs
-    ll = exp(`(lower`), # exponentiate ll
-    ul = exp(`upper)`), # exponentiate ul
-    z = results / se, 
-    p.value = 2 * (1 - pnorm(abs(z)))) # calculate p-value with Wald Test
-}
 ```
 
 ### Ordinal Regression Model
@@ -313,11 +257,12 @@ olr_imp_svy <- with(
   df_brr_imp, 
   svyolr(
     highest_math_ord ~
-      phae_z + psd_z + par_sch_inv_z + # parent factors
-      asian_par_ec + black_par_ec + another_par_ec + latinx_par_ec + multi_par_ec + iss +
-      x1ses + female + # ses/demographics
-      math_level1_num + math_score_z + # prior achievement
-      urban + public)) # school level
+    phae_z + psd_z + par_sch_inv_z + # parent factors
+    first_lang + # language
+    asian_ec + black_ec + another_ec + latinx_ec + multi_ec + iss +
+    x1ses + female + # ses/demographics
+    math_level1_num + math_score_z + # prior achievement
+    urban + public)) 
 
 # save model as rdata file
 save(olr_imp_svy, file =  "data/olr_imp_svy.rdata")
@@ -358,56 +303,6 @@ olr_imp_svy_tbl_apa <- olr_imp_svy_tbl %>% mutate(
 
 save_as_docx(olr_imp_svy_tbl_apa, 
              path = "tables/Weighted.docx")
-
-```
-
-### Binary Regression Model
-```{r, eval = FALSE}
-
-start_time <- Sys.time()
-
-# run ordinal regression
-glm_imp_svy <- with(
-  df_brr_imp, 
-  svyglm(
-    advanced_mathematics ~
-      phae_z + psd_z + par_sch_inv_z + # parent factors
-      asian_par_ec + black_par_ec + another_par_ec + latinx_par_ec + multi_par_ec + iss +
-      x1ses + female + # ses/demographics
-      math_level1_num + math_score + # prior achievement
-      urban + public,
-    family = quasibinomial())) # school level
-
-# get time for analysis, took around 2.5 minutes
-end_time <- Sys.time()
-end_time - start_time
-# save model as rdata file
-save(glm_imp_svy, file =  "data/glm_imp_svy.rdata")
-```
-
-### Binary Regression  Tables
-```{r}
-# load model
-load("data/glm_imp_svy.rdata")
-
-
-# get table
-glm_imp_svy_tbl <- make_mi_table(glm_imp_svy)
-write_csv(glm_imp_svy_tbl, "data/brr_glm_results.csv")
-glm_imp_svy_tbl %>% dplyr::select(variable, or, se, ll, ul, p.value) %>% 
-  mutate(
-    SE = round(se, 2),
-    LL = round(ll, 2),
-    UL = round(ul, 2),
-    stars = case_when(
-      p.value < 0.001 ~ "***",
-      p.value < 0.01  ~ "**",
-      p.value < 0.05  ~ "*",
-      TRUE ~ ""),
-    or_round = round(or, 2),
-    OR = paste0(formatC(or_round, format = "f", digits = 2), stars)
-    ) %>% dplyr::select(variable, OR, SE, LL, UL) %>% 
-  flextable() 
 
 ```
 
