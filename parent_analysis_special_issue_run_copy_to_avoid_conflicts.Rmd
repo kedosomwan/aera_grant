@@ -19,7 +19,7 @@ library(psych)
 library(EFAtools)
 library(lavaan)
 df_subset <- haven::read_dta("hsls_subset_wide.dta") # can use numeric values
-df_analysis <- df_subset %>% haven::as_factor() #make it factors
+
 ```
 # Reliability and Validity
 
@@ -28,18 +28,63 @@ df_analysis <- df_subset %>% haven::as_factor() #make it factors
 psd <- df_subset %>% dplyr::select(s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)
 phbae <- df_subset %>% dplyr::select(par_exp1, par_asp1, able_ba1)
 home <- df_subset %>% dplyr::select(par_exp1, par_asp1, able_ba1, s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)
-
+school <- df_subset %>% dplyr::select(p1schevent, p1volunteer, p1fundraise, p1ptconfer, 
+             p1ptomtg, p1schmtg)
 ```
 
 ## Reliability
 ```{r}
-psych::alpha(psd)
-psych::alpha(phbae)
-psych::alpha(home)
+psych::reliability(psd)
+psych::reliability(phbae)
+psych::reliability(home)
+psych::reliability(school)
 
 ```
 
-# Uninputed
+# Unimputed
+
+## Prep data
+```{r}
+df_analysis <- df_subset %>% mutate(
+  home = rowMeans(
+    dplyr::select(., par_exp1, par_asp1, able_ba1, 
+           s1momtalkm, s1dadtalkm, s1momtalks, s1dadtalks)),
+  school = rowSums(
+    dplyr::select(., p1schevent, p1volunteer, p1fundraise, 
+           p1ptconfer, p1ptomtg, p1schmtg)),
+    asian_ec = case_when(
+      x1race == 2 ~ 1,
+      x1race == 8 ~ -1,
+      TRUE ~ 0
+    ),
+    
+    black_ec = case_when(
+      x1race == 3 ~ 1,
+      x1race == 8 ~ -1,
+      TRUE ~ 0
+    ),
+    
+    latinx_ec = case_when(
+      x1race %in% c(4,5) ~ 1,
+      x1race == 8 ~ -1,
+      TRUE ~ 0
+    ),
+    
+    
+    multiracial_ec = case_when(
+      x1race == 6 ~ 1,
+      x1race == 8 ~ -1,
+      TRUE ~ 0
+    ),
+    
+    another_ec = case_when(
+      x1race %in% c(1,7) ~ 1,
+      x1race == 8 ~ -1,
+      TRUE ~ 0
+    )
+  )
+df_analysis <- df_analysis %>% haven::as_factor() #make it factors
+```
 
 ## Ordinal Regression
 ```{r}
@@ -52,9 +97,10 @@ df_analysis$x1race <- fct_relevel(df_analysis$x1race, "Asian, non-Hispanic")
 # run ordinal regression
 olr <- clm(data = df_analysis,
  ordered(highest_math) ~
-    psd_scale + phbae_scale + par_sch_inv + # parent factors
-    x1race + x1ses + female + # ses/demographics
-    math_level1 + math_score + # prior achievement
+    psd_scale + phbae_scale + I(scale(par_sch_inv)) + # parent factors
+   asian_ec + black_ec + another_ec + latinx_ec + multiracial_ec +  
+   x1ses + female + # ses/demographics
+    as.numeric(math_level1) + math_score + # prior achievement
     # x1mthid + x1mtheff + x1mthint + x1mthuti + # affect
     iss + urban + public) # school level
 
@@ -69,13 +115,15 @@ olr %>% tbl_regression(exp = TRUE)   %>%
 
 ## Logistic Regression
 ```{r}
-glm <- glm(data = df_analysis,
+glm <- glm(
            advanced_mathematics ~ 
-             psd_scale + phbae_scale + par_sch_inv + # parent factors
-             x1race + x1ses + female + # ses/demographics
+             psd_scale + phbae_scale + I(scale(par_sch_inv)) + # parent factors
+             asian_ec + black_ec + another_ec + latinx_ec + multiracial_ec +
+             x1ses + female + # ses/demographics
              early_algebra + as.numeric(math_level1) + math_score + # prior achievement
              #x1mthid + x1mtheff + x1mthint + x1mthuti + # affect
              iss + urban + public, # school level
+           data = df_analysis,
            family = binomial)
 
 export_summs(glm, exp = TRUE)
@@ -104,22 +152,21 @@ df_brr <- svrepdesign(
 ```
 ## Ordinal Regression
 ```{r}
-# set Asian as racial reference
-df_analysis$x1race <- fct_relevel(df_analysis$x1race, "Asian, non-Hispanic")
 
 # run ordinal regression
 svy_olr <- svyolr(design = df_brr,
  ordered(highest_math) ~
-    psd_scale + phbae_scale + par_sch_inv + # parent factors
-    x1race + x1ses + female + # ses/demographics
-    as.numeric(math_level1) + math_score + # prior achievement
+    psd_scale + phbae_scale + I(scale(par_sch_inv)) + # parent factors
+    asian_ec + black_ec + another_ec + latinx_ec + multiracial_ec + 
+   x1ses + female + # ses/demographics
+    early_algebra + as.numeric(math_level1) + math_score + # prior achievement
     # x1mthid + x1mtheff + x1mthint + x1mthuti + # affect
     iss + urban + public) # school level
 
 # get table
 svy_olr %>% tbl_regression(exp = TRUE)   %>% 
-  add_glance_source_note() %>% 
-  #add_significance_stars(hide_p = TRUE, hide_se = FALSE, hide_ci = FALSE) %>% 
+  add_glance_source_note() %>% add_global_p() %>% 
+  add_significance_stars(hide_p = TRUE, hide_se = FALSE, hide_ci = FALSE) %>% 
   as_flex_table()
 
 
@@ -131,8 +178,9 @@ svy_olr %>% tbl_regression(exp = TRUE)   %>%
 ```{r}
 svy_glm <- svyglm(design = df_brr,
            advanced_mathematics ~ 
-             psd_scale + phbae_scale + par_sch_inv + # parent factors
-             x1race + x1ses + female + # ses/demographics
+             psd_scale + phbae_scale + I(par_sch_inv) + # parent factors
+             asian_ec + black_ec + another_ec + latinx_ec + multiracial_ec + 
+             x1ses + female + # ses/demographics
              early_algebra + as.numeric(math_level1) + math_score + # prior achievement
              #x1mthid + x1mtheff + x1mthint + x1mthuti + # affect
              iss + urban + public, # school level
@@ -155,20 +203,38 @@ load("df_imp.rdata")
 ```
 
 ## Unweighted
+### Prep
+```{r}
+
+df_imp$data$asian_ec <- ifelse(df_imp$data$x1race == 2, 1,
+                        ifelse(df_imp$data$x1race == 8, -1, 0))
+
+df_imp$data$black_ec <- ifelse(df_imp$data$x1race == 3, 1,
+                        ifelse(df_imp$data$x1race == 8, -1, 0))
+
+df_imp$data$latinx_ec <- ifelse(df_imp$data$x1race %in% c(4, 5), 1,
+                         ifelse(df_imp$data$x1race == 8, -1, 0))
+
+df_imp$data$multiracial_ec <- ifelse(df_imp$data$x1race == 6, 1,
+                              ifelse(df_imp$data$x1race == 8, -1, 0))
+
+df_imp$data$another_ec <- ifelse(df_imp$data$x1race %in% c(1, 7), 1,
+                          ifelse(df_imp$data$x1race == 8, -1, 0))
+
+
+```
 
 ### Ordinal Regression
 ```{r}
 # load library for ordinal regression
 library(ordinal)
 
-# set Asian as racial reference
-df_imp$data$x1race <- fct_relevel(df_imp$data$x1race, "Asian, non-Hispanic")
-
 # run ordinal regression
 olr_imp <- with(df_imp, clm(
  ordered(highest_math) ~
-    psd_scale + phbae_scale + par_sch_inv + # parent factors
-    x1race + x1ses + female + # ses/demographics
+    psd_scale + phbae_scale + I(scale(par_sch_inv)) + # parent factors
+    asian_ec + black_ec + another_ec + latinx_ec + multiracial_ec + 
+   x1ses + female + # ses/demographics
     as.numeric(math_level1) + math_score + # prior achievement
     # x1mthid + x1mtheff + x1mthint + x1mthuti + # affect
     iss + urban + public)) # school level
@@ -178,6 +244,8 @@ olr_imp %>% tbl_regression(exp = TRUE)   %>%
   add_glance_source_note() %>% 
   add_significance_stars(hide_p = TRUE, hide_se = FALSE, hide_ci = FALSE) %>% 
   as_flex_table()
+
+pool(olr_imp)$pooled
 ```
 
 
@@ -218,8 +286,9 @@ start_time <- Sys.time()
 # run ordinal regression
 olr_imp_svy <- with(df_brr_imp, svyolr(
  ordered(highest_math) ~
-    psd_scale + phbae_scale + par_sch_inv + # parent factors
-    x1race + x1ses + female + # ses/demographics
+    psd_scale + phbae_scale + I(scale(par_sch_inv)) + # parent factors
+        asian_ec + black_ec + another_ec + latinx_ec + multiracial_ec + 
+   x1ses + female + # ses/demographics
     as.numeric(math_level1) + math_score + # prior achievement
     iss + urban + public)) # school level
 end_time <- Sys.time()
