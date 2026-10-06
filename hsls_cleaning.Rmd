@@ -471,8 +471,10 @@ write_dta(hsls, "data/hsls_subset.dta")
 ## check missing
 ```{r}
 df_imp_prep <- hsls %>% as_factor() %>% dplyr::select(
+  stu_id,
   starts_with("w3hstrans"), psd, phbae, par_sch_inv, par_race, x3thimath,
   stud_race, x1ses, female, math_level1, highest_math, advanced_mathematics, 
+  asian_ec + black_ec + another_ec + latinx_ec + multiracial_ec +
   iss, math_score, early_algebra,urban, public)
 
 colSums(is.na(df_imp_prep))
