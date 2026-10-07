@@ -297,13 +297,6 @@ olr_imp_svy_tbl_apa <- olr_imp_svy_tbl %>% mutate(
   OR = paste0(formatC(or_round, format = "f", digits = 2), stars)) %>% 
   dplyr::select(Model, Variable, OR, SE, LL, UL) %>% 
   flextable() 
-
-      "math_level1_num" = "Math 9",
-      "math_score_z" = "Math Score",
-
-      "ses_z" = "SES",
-      "urban1 urban" = "Urban",
-      "public1 public" = "Public",
 save_as_docx(olr_imp_svy_tbl_apa, 
              path = "tables/Weighted.docx")
 
@@ -338,9 +331,9 @@ weighted_tbl <- weighted_tbl %>%
       "psd_z" = "Parent STEM Discussions",
       "par_sch_inv_z" = "Parent School Engagement",
 
-      "asian_ec" = "Asian",
+      "asian_ec" = "Asian American",
       "black_ec" = "Black",
-      "another_ec" = "Another",
+      "another_ec" = "Another Race",
       "latinx_ec" = "Latinx",
       "multi_ec" = "Multiracial",
 
@@ -358,10 +351,10 @@ weighted_tbl <- weighted_tbl %>%
         "Latinx X Non-English Only",
 
       "asian_ec:first_langEnglish only" =
-        "Asian X English Only",
+        "Asian American X English Only",
 
       "asian_ec:first_langNon-English only" =
-        "Asian X Non-English Only"
+        "Asian American X Non-English Only"
     )
   )
 
