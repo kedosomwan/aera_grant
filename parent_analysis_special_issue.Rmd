@@ -115,6 +115,9 @@ library(mitools)
 library(mice)
 library(survey)
 library(gtsummary)
+library(tidyverse)
+library(flextable)
+library(gtsummary)
 load("data/df_imp.rdata")
 ```
 
@@ -234,7 +237,7 @@ df_brr_imp <- svrepdesign(
 ```
 
 ### Ordinal Regression Model
-```{r}
+```{r, eval = FALSE}
 start_time <- Sys.time()
 
 # run ordinal regression
@@ -258,9 +261,17 @@ end_time - start_time
 ```
 
 ### Ordinal Regression Tables
+#### Load Results
 ```{r}
+start_time <-  Sys.time()
 # code to  load model to avoid having to waight for it to rerun
-# load("data/olr_imp_svy.rdata")
+load("data/olr_imp_svy.rdata")
+end_time <-  Sys.time()
+end_time - start_time
+```
+
+## Save Tables
+```{r}
 # get table
 olr_imp_svy_tbl <- summary(pool(olr_imp_svy))
 
@@ -293,7 +304,100 @@ save_as_docx(olr_imp_svy_tbl_apa,
 ```
 
 # Forest Plots
+
+## Modify Tables for Plots
 ```{r}
-# remember to save in figures folder!
+
+forest_plot_tbl <- rbind(olr_imp_svy_tbl, olr_imp_tbl)
+forest_plot_tbl <- forest_plot_tbl %>% 
+  dplyr::select(Model, Variable, or, ll, ul, p.value) %>% 
+  filter(
+    #p.value <= 0.05, 
+    Variable != c("1|2", "2|3", "3|4")) 
+
+forest_plot_tbl <- forest_plot_tbl %>%
+  mutate(
+    Variable = factor(
+      Variable,
+      levels = rev(unique(Variable))
+    )
+  )
+
+forest_plot_tbl <- forest_plot_tbl %>%
+  mutate(
+    Variable = recode(
+      Variable,
+
+      "phae_z" = "PAE",
+      "psd_z" = "PSD",
+      "par_sch_inv_z" = "PSI",
+
+      "asian_ec" = "Asian",
+      "black_ec" = "Black",
+      "another_ec" = "Another",
+      "latinx_ec" = "Latinx",
+      "multi_ec" = "Multiracial",
+
+      "iss" = "ISS",
+      "first_langEnglish only" = "English only",
+      "first_langNon-English only" = "Non-English only",
+
+      "ses_z" = "SES",
+      "female" = "Female",
+
+      "math_level1_num" = "Math 9",
+      "math_score_z" = "Math Score",
+
+      "urban1 urban" = "Urban",
+      "public1 public" = "Public",
+
+      "latinx_ec:first_langEnglish only" =
+        "Latinx X English only",
+
+      "latinx_ec:first_langNon-English only" =
+        "Latinx X Non-English Only",
+
+      "asian_ec:first_langEnglish only" =
+        "Asian X English only",
+
+      "asian_ec:first_langNon-English only" =
+        "Asian X Non-English Only"
+    )
+  )
+  
+```
+## Create Plot
+```{r}
+ggplot(forest_plot_tbl, aes(x = or, y = Variable)) +
+  # scale_y_continuous(breaks = seq(150, 260, by = 10)) + # ylim(140, 260) +
+  geom_vline(xintercept = 1, linetype = "dotted") +
+  geom_errorbar(
+    aes(xmin = ll,
+        xmax = ul),
+    width = 0.2,
+    color = "grey60"
+  ) +
+  scale_x_log10() +
+      geom_text(
+        aes(
+            x = or,     # position label near left CI bound
+            label = Variable),
+        nudge_y = .35,
+        hjust = .5,
+        size = 4
+    ) +
+  labs(x = "Odds Ratio (log scale)") +
+  geom_point(size = 1) +
+  facet_wrap(~ Model, nrow = 1) +
+  jtools::theme_apa() + theme(
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank(),
+    axis.title.y = element_blank()
+  )
+
 ```
 
+## Save PLot
+```{r}
+ggsave("figures/forest_plots.jpeg", dpi = 300, height = 10, width = 7)
+```
